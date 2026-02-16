@@ -1,26 +1,35 @@
-# NeuralWave Core
+# TensorWAV
 
-A research-grade PyTorch sub-framework for physics-informed neural networks (PINNs) and operator learning.
+TensorWAV is a PyTorch library for physics-informed neural networks (PINNs) and operator learning. It provides structured components for modeling differential equations and dynamical systems with neural networks that incorporate differential operators, residual constraints, and spectral transformations.
+
+Repository: https://github.com/esranow/tensorwav
+
+---
 
 ## Features
 
-- **Models**: MLP, Fourier MLP, SIREN, Fourier Neural Operator (FNO)
-- **Physics**: PDE specification, auto-differentiation residuals, boundary conditions
-- **Solvers**: Finite difference and spectral solvers for validation
-- **Training**: Unified engine for PINN and operator learning with mixed precision
-- **Diagnostics**: Metrics, energy functionals, spectral analysis
-- **IO**: Checkpointing, TorchScript/ONNX export, model cards
+- **Models**: MLP, Fourier-feature MLP, SIREN, Fourier Neural Operator (FNO)
+- **Physics Core**: PDE specification, automatic differentiation–based residuals, boundary conditions (Dirichlet, Neumann, Periodic)
+- **Physics Blocks**: Modular physics-aware neural layers combining fixed operators with learnable corrections
+- **Solvers**: Finite-difference and spectral solvers for controlled validation
+- **Training**: Unified engine supporting PINN and operator learning with mixed precision
+- **Diagnostics**: Error metrics, energy functionals, spectral-domain analysis
+- **IO**: Checkpointing, TorchScript/ONNX export, structured experiment metadata
+
+---
 
 ## Installation
 
+Install directly from GitHub:
+
 ```bash
-pip install git+https://github.com/your-repo/TensorWAV.git#subdirectory=TensorWAV
-```
+pip install git+https://github.com/esranow/tensorwav.git#subdirectory=TensorWAV
 
 Or for local development:
 
 ```bash
-cd TensorWAV
+git clone https://github.com/esranow/tensorwav.git
+cd tensorwav/TensorWAV
 pip install -e .
 ```
 
@@ -49,12 +58,13 @@ python TensorWAV/examples/predict_and_plot.py
 ```
 TensorWAV/
 ├── models/          # Neural network architectures
-├── physics/         # PDE specifications and residuals
+├── physics/         # PDE specifications and residual construction
+├── physics_blocks/  # Modular physics-aware neural layers
 ├── datasets/        # Data generators
 ├── solvers/         # Numerical solvers
 ├── training/        # Training engine and callbacks
 ├── operators/       # Operator learning utilities
-├── io/              # Checkpointing and export
+├── io/              # Checkpointing and export utilities
 ├── diagnostics/     # Metrics and analysis tools
 ├── configs/         # Example configurations
 ├── examples/        # Example scripts
@@ -99,3 +109,4 @@ pytest TensorWAV/tests/test_physics.py
 ## License
 
 MIT License
+
