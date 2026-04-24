@@ -3,14 +3,13 @@ import math
 from ripple.physics.operators import TimeDerivative, Diffusion, Source, Nonlinear
 from ripple.physics.equation import Equation
 from ripple.core.system import System, Domain, Constraint
-from ripple.core.simulation import Simulation
 from ripple.core.experiment import Experiment
 
 def test_source_nonlinear():
     print("RUNNING SOURCE + NONLINEAR TEST")
     
-    domain = Domain(spatial_dims=1, x_range=(0, 1), t_range=(0, 1))
-    ic = Constraint(fn=lambda u, x, t: torch.tensor(0.0), type="initial")
+    domain = Domain(spatial_dims=1, bounds=((0, 1), (0, 1)), resolution=(32, 101))
+    ic = Constraint(type="initial", location=(slice(None), 0), value=0.0)
     
     # 1. Source Test: u_t = a*u_xx + f(x,t)
     f = lambda u, p: torch.sin(math.pi * p["inputs"][..., 0:1])
@@ -30,10 +29,6 @@ def test_source_nonlinear():
     sys_nonlinear = System(eq_nonlinear, domain, [ic])
     
     # Validation Loop
-    N = 32
-    u0 = torch.zeros((1, N, 1))
-    v0 = torch.zeros((1, N, 1))
-    
     class TinyModel(torch.nn.Module):
         def __init__(self):
             super().__init__()
@@ -42,19 +37,14 @@ def test_source_nonlinear():
             return self.net(inputs)
             
     for name, sys in [("Source", sys_source), ("Nonlinear", sys_nonlinear)]:
-        # Simulation (checks routing/execution)
-        # Note: Simulation FD solvers might not support arbitrary Source/Nonlinear yet
-        # but select_solver should at least handle the basic types if matched.
-        # Actually, let's just check Experiment as it uses Equation SOT directly.
-        
         model = TinyModel()
         opt = torch.optim.Adam(model.parameters(), lr=0.01)
         exp = Experiment(sys, model, opt)
         
-        x = torch.linspace(0, 1, 10).view(-1, 1)
-        t = torch.linspace(0, 1, 10).view(-1, 1)
+        coords = torch.rand(4, 10, 2)
         
-        loss = exp.train(x, t)
+        train_res = exp.train(coords)
+        loss = train_res["loss"]
         assert math.isfinite(loss)
         print(f"  [PASS] {name} Experiment (loss={loss:.6f})")
 

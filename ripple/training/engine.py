@@ -85,7 +85,13 @@ def train_from_config(config: Union[str, Path, Dict[str, Any]]) -> None:
     use_amp = train_cfg.get("use_amp", False) and device.type == "cuda"
     scaler = GradScaler("cuda", enabled=use_amp)
     
-    mode = cfg.get("mode", cfg.get("task", "pinn")).lower()
+    raw_mode = cfg.get("mode", cfg.get("task", "pinn")).lower()
+    if "pinn" in raw_mode or "physics_informed" in raw_mode:
+        mode = "pinn"
+    elif "operator" in raw_mode:
+        mode = "operator_learning"
+    else:
+        mode = raw_mode
     
     # 7. Data (Placeholder generation based on task logic)
     # In a real app, we'd use a DataModule. Here we simulate batch generation or use provided specs.

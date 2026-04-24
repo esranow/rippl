@@ -59,7 +59,7 @@ class TestHybridLaplacianBlock:
     def test_grid_mode_2d_shape(self):
         from ripple.physics_blocks.laplacian import HybridLaplacianBlock
 
-        block = HybridLaplacianBlock(mode="grid", spatial_dim=2)
+        block = HybridLaplacianBlock(mode="grid", spatial_dim=2, use_correction=False)
         u = torch.randn(2, 1, 16, 16)
         out = block(u)
         assert out.shape == (2, 1, 16, 16)
@@ -72,32 +72,41 @@ class TestHybridWaveResidualBlock:
     def test_residual_near_zero_on_analytic_wave(self):
         """u = sin(πx)cos(πt), c=1: wave eq residual should be ≈ 0."""
         from ripple.physics_blocks.residual import HybridWaveResidualBlock
+        from ripple.physics.equation import Equation
+        from ripple.physics.operators import TimeDerivative, Laplacian
 
+        eq = Equation([(1.0, TimeDerivative(order=2)), (-1.0, Laplacian())])
         block = HybridWaveResidualBlock(a=1.0, b=0.0, c=1.0, use_correction=False)
         B, N = 1, 50
         coords = torch.rand(B, N, 2, requires_grad=True)
         u = torch.sin(math.pi * coords[..., 0:1]) * \
             torch.cos(math.pi * coords[..., 1:2])
-        res = block.residual(u, coords)
+        res = block.residual(u, eq, coords)
         assert res.abs().max().item() < 0.5, \
             f"Residual too large: {res.abs().max().item()}"
 
     def test_loss_returns_scalar(self):
         from ripple.physics_blocks.residual import HybridWaveResidualBlock
+        from ripple.physics.equation import Equation
+        from ripple.physics.operators import TimeDerivative, Laplacian
 
+        eq = Equation([(1.0, TimeDerivative(order=2)), (-1.0, Laplacian())])
         block = HybridWaveResidualBlock(use_correction=True)
         coords = torch.rand(2, 30, 2, requires_grad=True)
         u = torch.sin(coords[..., 0:1])
-        loss = block.loss(u, coords)
+        loss = block.loss(u, eq, coords)
         assert loss.shape == ()
 
     def test_forward_shape(self):
         from ripple.physics_blocks.residual import HybridWaveResidualBlock
+        from ripple.physics.equation import Equation
+        from ripple.physics.operators import TimeDerivative, Laplacian
 
+        eq = Equation([(1.0, TimeDerivative(order=2)), (-1.0, Laplacian())])
         block = HybridWaveResidualBlock()
         coords = torch.rand(2, 20, 2, requires_grad=True)
         u = torch.sin(coords[..., 0:1])
-        out = block(u, coords)
+        out = block(u, eq, coords)
         assert out.shape == (2, 20, 1)
 
 
@@ -412,7 +421,10 @@ class TestCrossBlockPipeline:
         """Chain gradient + wave residual blocks."""
         from ripple.physics_blocks.gradient import HybridGradientBlock
         from ripple.physics_blocks.residual import HybridWaveResidualBlock
+        from ripple.physics.equation import Equation
+        from ripple.physics.operators import TimeDerivative, Laplacian
 
+        eq = Equation([(1.0, TimeDerivative(order=2)), (-1.0, Laplacian())])
         coords = torch.rand(1, 30, 2, requires_grad=True)
         u = torch.sin(coords[..., 0:1])
 
@@ -421,7 +433,7 @@ class TestCrossBlockPipeline:
         assert grad_u.shape == (1, 30, 2)
 
         res_block = HybridWaveResidualBlock(use_correction=False)
-        res = res_block(u, coords)
+        res = res_block(u, eq, coords)
         assert res.shape == (1, 30, 1)
 
     def test_embedding_modulates_spectral_conv(self):

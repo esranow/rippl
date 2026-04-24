@@ -25,6 +25,7 @@ dev = [
     "pytest-cov",
     "black",
     "isort",
+    "onnx",
 ]
 
 [project.scripts]
