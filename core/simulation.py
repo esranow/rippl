@@ -6,28 +6,6 @@ from ripple.core.system import System
 from ripple.core.solver_registry import select_solver
 from ripple.physics.operators import Diffusion, Advection
 
-def _extract_alpha(eq):
-    alphas = [op.alpha for _, op in eq.terms if isinstance(op, Diffusion)]
-    if not alphas: raise ValueError("Missing Diffusion operator")
-    if len(alphas) > 1: raise ValueError("Multiple Diffusion operators found")
-    return alphas[0]
-
-def _extract_v(eq):
-    vs = [op.v for _, op in eq.terms if isinstance(op, Advection)]
-    if not vs: raise ValueError("Missing Advection operator")
-    if len(vs) > 1: raise ValueError("Multiple Advection operators found")
-    return vs[0]
-
-def _extract_beta(eq):
-    from ripple.physics.operators import TimeDerivative
-    betas = [coeff for coeff, op in eq.terms if isinstance(op, TimeDerivative) and op.order == 1]
-    return betas[0] if betas else 0.0
-
-def _extract_c(eq):
-    from ripple.physics.operators import Laplacian
-    # Assuming -c^2 * Laplacian
-    c_sqs = [-coeff for coeff, op in eq.terms if isinstance(op, Laplacian)]
-    return c_sqs[0]**0.5 if c_sqs else 1.0
 
 
 class Simulation:
@@ -45,16 +23,10 @@ class Simulation:
     def __init__(
         self,
         system: System,
-        c: float = 1.0,
-        dt: float = 0.01,
-        dx: float = 1.0,
         tol: float = 1e-2,
         seed: Optional[int] = None,
     ):
         self.system = system
-        self.c = c
-        self.dt = dt
-        self.dx = dx
         self.tol = tol
         self.seed = seed
 
@@ -66,80 +38,24 @@ class Simulation:
     ) -> dict:
         self.system.set_seed(self.seed)
         self.system.validate()
-        if self.dt <= 0: raise ValueError("dt must be > 0")
-        if self.dx <= 0: raise ValueError("dx must be > 0")
-        if steps <= 0: raise ValueError("steps must be > 0")
-
-        solver = select_solver(self.system.equation)
-
-        if solver == "wave":
-            from ripple.solvers.fd_solver import solve_wave_fd_1d
-            res = solve_wave_fd_1d(u0, v0, c=self.c, dt=self.dt, dx=self.dx, steps=steps)
-        elif solver == "advdiff":
-            from ripple.solvers.fd_solver import solve_advdiff_fd_1d
-            res = solve_advdiff_fd_1d(
-                u0, steps=steps,
-                alpha=_extract_alpha(self.system.equation),
-                v=_extract_v(self.system.equation),
-                dt=self.dt, dx=self.dx,
-            )
-        elif solver == "diffusion":
-            from ripple.solvers.fd_solver import solve_diffusion_fd_1d
-            res = solve_diffusion_fd_1d(
-                u0, steps=steps,
-                alpha=_extract_alpha(self.system.equation),
-                dt=self.dt, dx=self.dx,
-            )
-        elif solver == "advection":
-            from ripple.solvers.fd_solver import solve_advection_fd_1d
-            res = solve_advection_fd_1d(
-                u0, steps=steps,
-                v=_extract_v(self.system.equation),
-                dt=self.dt, dx=self.dx,
-            )
-        elif solver == "reaction_diffusion":
-            from ripple.solvers.fd_solver import solve_reaction_diffusion_fd_1d
-            res = solve_reaction_diffusion_fd_1d(
-                u0, steps=steps,
-                alpha=_extract_alpha(self.system.equation),
-                equation=self.system.equation,
-                dt=self.dt, dx=self.dx,
-            )
-        elif solver == "first_order_nonlinear":
-            from ripple.solvers.fd_solver import solve_reaction_diffusion_fd_1d
-            res = solve_reaction_diffusion_fd_1d(
-                u0, steps=steps,
-                alpha=0.0,
-                equation=self.system.equation,
-                dt=self.dt, dx=self.dx,
-            )
-        elif solver == "damped_wave":
-            from ripple.solvers.fd_solver import solve_damped_wave_fd_1d
-            res = solve_damped_wave_fd_1d(
-                u0, v0,
-                beta=_extract_beta(self.system.equation),
-                c=_extract_c(self.system.equation),
-                dt=self.dt, dx=self.dx, steps=steps
-            )
+        
+        coords, (dx, dt) = self.system.domain.build_grid(device=u0.device)
+        from ripple.core.solver_registry import get_solver
+        solver_fn, extractor = get_solver(self.system.equation)
+        extra_kwargs = extractor(self.system.equation)
+        
+        if "v0" in solver_fn.__code__.co_varnames:
+            res = solver_fn(u0, v0, steps=steps, dt=dt, dx=dx, **extra_kwargs)
         else:
-            raise NotImplementedError(f"No FD solver registered for key: {solver}")
+            res = solver_fn(u0, steps=steps, dt=dt, dx=dx, **extra_kwargs)
 
         # Verification
         try:
-            B, T_steps, N, _ = res.shape
-            x = torch.linspace(0, (N-1)*self.dx, N, device=res.device)
-            t = torch.linspace(0, (T_steps-1)*self.dt, T_steps, device=res.device)
-            tt, xx = torch.meshgrid(t, x, indexing='ij')
-            coords = torch.stack([xx, tt], dim=-1).unsqueeze(0).expand(B, -1, -1, -1)
-            
-            # Autograd setup + last frame only
             u_last = res[:, -1].detach().requires_grad_(True)
-            coords_last = coords[:, -1]
+            coords_last = coords[:, -1].unsqueeze(0).expand(res.shape[0], -1, -1)
             
             pde_res = self.system.equation.compute_residual(u_last, coords_last)
             err = torch.abs(pde_res).mean().item()
-            
-            # Scale-aware tolerance
             dynamic_tol = self.tol * u_last.abs().mean().clamp(min=1e-6).item()
             
             if err > dynamic_tol:
@@ -151,9 +67,8 @@ class Simulation:
         return {
             "field": res,
             "meta": {
-                "solver": solver,
-                "dt": self.dt,
-                "dx": self.dx,
+                "dt": dt,
+                "dx": dx,
                 "steps": steps
             }
         }

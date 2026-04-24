@@ -11,19 +11,32 @@ from ripple.physics.equation import Equation
 @dataclass
 class Domain:
     """Axis-aligned domain specification."""
-    spatial_dims: int          # 1 or 2
-    x_range: tuple = (0.0, 1.0)
-    t_range: tuple = (0.0, 1.0)
-    y_range: Optional[tuple] = None  # only for 2-D
-    bounds: Optional[tuple] = None
-    resolution: Optional[int] = None
+    spatial_dims: int
+    bounds: tuple              # ( (x_min, x_max), (t_min, t_max), ... )
+    resolution: tuple          # (nx, nt, ...)
+
+    def build_grid(self, device="cpu"):
+        """Returns (coords_tensor, grid_spacing)."""
+        import torch
+        axes = []
+        spacings = []
+        for (low, high), n in zip(self.bounds, self.resolution):
+            axes.append(torch.linspace(low, high, n, device=device))
+            spacings.append((high - low) / (n - 1) if n > 1 else 1.0)
+        
+        # meshgrid expects t, x (indexing='ij')
+        # We assume bounds[0] is spatial, bounds[1] is temporal
+        grid = torch.meshgrid(*axes, indexing='ij')
+        coords = torch.stack(grid, dim=-1)
+        return coords, spacings
 
 
 class Constraint:
-    def __init__(self, fn, weight=1.0, type: str = "custom"):
-        self.fn = fn
+    def __init__(self, type: str, location: Any, value: Any, weight: float = 1.0):
+        self.type = type          # 'initial', 'boundary'
+        self.location = location  # e.g. x=0.0
+        self.value = value        # target value or function
         self.weight = weight
-        self.type = type
 
 
 class System:
@@ -65,8 +78,9 @@ class System:
 
         c_types = [c.type for c in self.constraints]
         for c in self.constraints:
-            assert callable(c.fn), "constraint fn must be callable"
-            assert c.type in ("boundary", "initial", "custom"), f"invalid constraint type: {c.type}"
+            assert c.type in ("boundary", "initial"), f"invalid constraint type: {c.type}"
+            assert c.location is not None, "constraint must have a location"
+            assert c.value is not None, "constraint must have a value"
 
         if has_t2 and self.constraints:
             assert "initial" in c_types, "TimeDerivative(order=2) requires at least one 'initial' constraint"
