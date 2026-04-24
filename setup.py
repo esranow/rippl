@@ -5,7 +5,7 @@ setup(
     version="0.0.1",
     description="ripple: modular physics-ML framework for wave PDEs",
     python_requires=">=3.9",
-    install_requires=["torch>=2.0", "pyyaml"],
+    install_requires=["torch>=2.0", "pyyaml", "numpy", "matplotlib"],
     # Map the package name 'ripple' to the TensorWAV directory (current dir '.')
     package_dir={"ripple": "."},
     packages=["ripple"] + [
