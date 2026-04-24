@@ -1,8 +1,8 @@
-# TensorWAV
+# ripple
 
-TensorWAV is a PyTorch library for physics-informed neural networks (PINNs) and operator learning. It provides structured components for modeling differential equations and dynamical systems with neural networks that incorporate differential operators, residual constraints, and spectral transformations.
+ripple is a PyTorch library for physics-informed neural networks (PINNs) and operator learning. It provides structured components for modeling differential equations and dynamical systems with neural networks that incorporate differential operators, residual constraints, and spectral transformations.
 
-Repository: https://github.com/esranow/tensorwav
+Repository: https://github.com/esranow/rippleml
 
 ---
 
@@ -23,13 +23,14 @@ Repository: https://github.com/esranow/tensorwav
 Install directly from GitHub:
 
 ```bash
-pip install git+https://github.com/esranow/tensorwav.git#subdirectory=TensorWAV
+pip install git+https://github.com/esranow/rippleml.git
+```
 
 Or for local development:
 
 ```bash
-git clone https://github.com/esranow/tensorwav.git
-cd tensorwav/TensorWAV
+git clone https://github.com/esranow/rippleml.git
+cd rippleml
 pip install -e .
 ```
 
@@ -38,25 +39,25 @@ pip install -e .
 ### Training a PINN
 
 ```bash
-python -m TensorWAV.cli --config TensorWAV/configs/demo_pinn_1d.yaml
+python -m ripple.cli --config ripple/configs/demo_pinn_1d.yaml
 ```
 
 ### Running Tests
 
 ```bash
-pytest TensorWAV/tests
+pytest ripple/tests
 ```
 
 ### Example: Prediction and Plotting
 
 ```bash
-python TensorWAV/examples/predict_and_plot.py
+python ripple/examples/predict_and_plot.py
 ```
 
 ## Project Structure
 
 ```
-TensorWAV/
+ripple/
 ├── models/          # Neural network architectures
 ├── physics/         # PDE specifications and residual construction
 ├── physics_blocks/  # Modular physics-aware neural layers
@@ -96,14 +97,14 @@ training:
 All modules include unit tests. Run the full test suite:
 
 ```bash
-pytest TensorWAV/tests -v
+pytest ripple/tests -v
 ```
 
 Run specific test modules:
 
 ```bash
-pytest TensorWAV/tests/test_models.py
-pytest TensorWAV/tests/test_physics.py
+pytest ripple/tests/test_models.py
+pytest ripple/tests/test_physics.py
 ```
 
 ## License

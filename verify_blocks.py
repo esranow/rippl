@@ -4,7 +4,7 @@ Run: python verify_blocks.py
 """
 import sys
 import os
-# Add parent directory to path for TensorWAV imports
+# Add parent directory to path for ripple imports
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -21,7 +21,7 @@ print("=" * 60)
 # Test 1: Import all blocks
 print("\n[1/4] Testing imports...")
 try:
-    from TensorWAV.physics_blocks import (
+    from ripple.physics_blocks import (
         HybridLaplacianBlock,
         HybridWaveResidualBlock,
         SpectralHybridBlock,
@@ -157,3 +157,4 @@ if tests_passed == tests_total:
 else:
     print(f"\n✗ {tests_total - tests_passed} test(s) failed")
     sys.exit(1)
+

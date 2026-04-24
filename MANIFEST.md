@@ -4,28 +4,28 @@
 
 ### Core Package Structure
 
-#### `TensorWAV/physics_blocks/__init__.py`
+#### `ripple/physics_blocks/__init__.py`
 - Package initializer exporting all blocks
-- Imports updated to `TensorWAV.physics_blocks...`
+- Imports updated to `ripple.physics_blocks...`
 
-#### `TensorWAV/physics_blocks/README.md`
-- Documentation updated with `TensorWAV` package name
+#### `ripple/physics_blocks/README.md`
+- Documentation updated with `ripple` package name
 
-... (Block files moved to `TensorWAV/physics_blocks/`)
+... (Block files moved to `ripple/physics_blocks/`)
 
 ### Infrastructure
 
 #### `setup.py` (NEW)
 - Replaces `pyproject.toml` for explicit package installation
-- Defines package name `TensorWAV`
+- Defines package name `ripple`
 
-#### `TensorWAV/` (NEW DIRECTORY)
+#### `ripple/` (NEW DIRECTORY)
 - Contains all source code (`physics_blocks`, `training`, `models`, etc.)
 
 ### Tests & Scripts
 
 #### `tests/test_physics_blocks.py`
-- Updated imports to use `TensorWAV`
+- Updated imports to use `ripple`
 
 #### `manual_verify.py` (NEW)
 - Script to verify imports by modifying `sys.path` directly (useful if pip install fails)
@@ -47,5 +47,6 @@ pytest tests/test_physics_blocks.py -v
 ## 🚀 CLI
 
 ```bash
-python -m TensorWAV.cli --config TensorWAV/configs/demo_blocks_playground.yaml
+python -m ripple.cli --config ripple/configs/demo_blocks_playground.yaml
 ```
+

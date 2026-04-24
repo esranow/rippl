@@ -7,7 +7,7 @@ Thank you for your interest in contributing to NeuralWave Core!
 1. Clone the repository
 2. Install in development mode:
    ```bash
-   cd TensorWAV
+   cd ripple
    pip install -e .
    pip install pytest
    ```
@@ -37,12 +37,12 @@ All contributions must follow these strict guidelines:
 Every module must include unit tests:
 
 ```bash
-pytest TensorWAV/tests
+pytest ripple/tests
 ```
 
 Run specific test files:
 ```bash
-pytest TensorWAV/tests/test_models.py -v
+pytest ripple/tests/test_models.py -v
 ```
 
 ## Pull Request Process
@@ -63,3 +63,4 @@ All submissions require review. We use GitHub pull requests for this purpose.
 ## Questions?
 
 Open an issue for questions or discussions about contributions.
+

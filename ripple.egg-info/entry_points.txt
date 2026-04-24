@@ -1,2 +1,0 @@
-[console_scripts]
-ripple = ripple.cli:main
