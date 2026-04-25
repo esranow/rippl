@@ -2,8 +2,9 @@
 ripple.core.system — System = Equation + Domain + Constraints.
 """
 from __future__ import annotations
+import torch
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union, Callable
 
 from ripple.physics.equation import Equation
 
@@ -31,12 +32,13 @@ class Domain:
         return coords, spacings
 
 
+@dataclass
 class Constraint:
-    def __init__(self, type: str, location: Any, value: Any, weight: float = 1.0):
-        self.type = type          # 'initial', 'boundary'
-        self.location = location  # e.g. x=0.0
-        self.value = value        # target value or function
-        self.weight = weight
+    """Explicit constraint: type + field + coords + value."""
+    type: str               # "dirichlet", "neumann", "initial"
+    field: str              # field name, e.g. "u"
+    coords: torch.Tensor    # (N, D) coordinates
+    value: Union[Callable, torch.Tensor]  # target value or callable(coords)
 
 
 class System:
@@ -78,9 +80,10 @@ class System:
 
         c_types = [c.type for c in self.constraints]
         for c in self.constraints:
-            assert c.type in ("boundary", "initial"), f"invalid constraint type: {c.type}"
-            assert c.location is not None, "constraint must have a location"
+            assert c.type in ("boundary", "initial", "dirichlet", "neumann"), f"invalid constraint type: {c.type}"
+            assert c.coords is not None, "constraint must have coords"
             assert c.value is not None, "constraint must have a value"
+
 
         if has_t2 and self.constraints:
             assert "initial" in c_types, "TimeDerivative(order=2) requires at least one 'initial' constraint"

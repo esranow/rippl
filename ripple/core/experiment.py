@@ -20,13 +20,15 @@ class Experiment:
             
             # 2. Constraint Loss
             loss_const = 0.0
+            device = coords.device
+            import torch.nn.functional as F
             for c in self.system.constraints:
-                # Basic implementation: assume c.location is a mask or indices
-                # For now, let's assume it's a simple value comparison
-                # In a real PINN, we'd sample these points
-                pass
+                c_coords = c.coords.to(device)
+                u_pred = self.model(c_coords)
+                u_target = c.value(c_coords) if callable(c.value) else c.value.to(device)
+                loss_const += F.mse_loss(u_pred, u_target)
             
-            total_loss = loss_pde + loss_const
+            total_loss = loss_pde + 100.0 * loss_const
             
             if torch.isnan(total_loss):
                 raise RuntimeError("Training encountered NaN loss")
