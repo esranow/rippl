@@ -1,6 +1,6 @@
 # Contributing to Ripple
 
-Thank you for your interest in contributing to NeuralWave Core!
+Thank you for your interest in contributing to Ripple!
 
 ## Development Setup
 
