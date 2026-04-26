@@ -17,52 +17,40 @@ class EquationSystem:
         self.equations = equations
         self.weights = weights if weights is not None else [1.0] * len(equations)
         
-    def compute_residuals(self, fields: Dict[str, torch.Tensor], coords: torch.Tensor) -> List[torch.Tensor]:
+    def compute_residuals(self, fields: Dict[str, torch.Tensor], coords: torch.Tensor, spatial_dims: int = None) -> List[torch.Tensor]:
         """
         Computes residual for each equation.
-        
-        fields: Dict of field tensors {name: tensor}.
-        coords: Coordinate tensor used to compute fields.
         """
         if not coords.requires_grad:
             coords = coords.requires_grad_(True)
             
+        # 1. Collect all required derivatives from ALL equations
+        all_requests = []
+        for eq in self.equations:
+            for _, op in eq.terms:
+                sig = op.signature()
+                all_requests.extend(sig.get("requires_derived", []))
+        
+        # 2. Precompute derivatives once
+        derived = {}
+        if all_requests:
+            from ripple.physics.derivatives import compute_all_derivatives
+            derived = compute_all_derivatives(fields, coords, list(set(all_requests)))
+            
         residuals = []
-        params = {"inputs": coords}
+        params = {"inputs": coords, "fields": fields, "derived": derived}
+        if spatial_dims is not None:
+            params["spatial_dims"] = spatial_dims
         
         for eq in self.equations:
-            # Each equation acts on a specific field determined by its operators
-            # But Equation.residual expects a single 'field' argument.
-            # In multi-field, the operators handle the field lookup?
-            # Wait, looking at Equation.residual:
-            # out = out + coeff * op.compute(field, params)
-            # This 'field' is passed from the top.
-            
-            # If Equation was designed for single field, we need to adapt it.
-            # However, for Phase 3, we can assume each Equation corresponds to one residual term.
-            # But which field should we pass to Equation.residual?
-            
-            # Let's look at the operators. Each operator has a 'field' property.
-            # So Equation.residual should probably be updated to take the fields dict
-            # OR EquationSystem handles the routing.
-            
-            # Actually, if I update Equation.residual to ignore its 'field' argument 
-            # and let operators pull from params["fields"], it would be cleaner.
-            
-            # But the prompt says EquationSystem.compute_residuals(fields, coords).
-            # I will pass 'fields' in params.
-            params["fields"] = fields
-            
-            # We still need to pass A field to Equation.residual because it's required.
-            # We'll pass the first field or a dummy, but operators will use params["fields"].
             dummy_field = next(iter(fields.values()))
             residuals.append(eq.residual(dummy_field, params))
             
         return residuals
 
-    def compute_loss(self, fields: Dict[str, torch.Tensor], coords: torch.Tensor) -> torch.Tensor:
+    def compute_loss(self, fields: Dict[str, torch.Tensor], coords: torch.Tensor, spatial_dims: int = None) -> torch.Tensor:
         """Weighted MSE sum of all residuals."""
-        residuals = self.compute_residuals(fields, coords)
+        residuals = self.compute_residuals(fields, coords, spatial_dims=spatial_dims)
         loss = torch.tensor(0.0, device=coords.device)
         for res, weight in zip(residuals, self.weights):
             loss = loss + weight * torch.mean(res**2)

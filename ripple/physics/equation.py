@@ -34,14 +34,28 @@ class Equation:
             out = out - self.forcing(params)
         return out
 
-    def compute_residual(self, u: torch.Tensor, inputs: torch.Tensor) -> torch.Tensor:
+    def compute_residual(self, u: torch.Tensor, inputs: torch.Tensor, spatial_dims: int = None) -> torch.Tensor:
         """Single entry-point for Experiment and all callers.
-
-        Args:
-            u: Model output computed from inputs (autograd graph connected).
-            inputs: cat([x, t], dim=-1) with requires_grad=True — the SAME
-                    tensor the model used so operators can differentiate u w.r.t. it.
+        Now collects and precomputes all required derivatives.
         """
         if not inputs.requires_grad:
             inputs = inputs.requires_grad_(True)
-        return self.residual(u, {"inputs": inputs})
+        
+        # 1. Collect all required derivatives from operators
+        all_requests = []
+        for _, op in self.terms:
+            sig = op.signature()
+            all_requests.extend(sig.get("requires_derived", []))
+        
+        # 2. Precompute derivatives if any requested
+        derived = {}
+        if all_requests:
+            from ripple.physics.derivatives import compute_all_derivatives
+            # In simple Equation.compute_residual, fields is just {"u": u}
+            fields = {"u": u}
+            derived = compute_all_derivatives(fields, inputs, list(set(all_requests)))
+            
+        params = {"inputs": inputs, "derived": derived}
+        if spatial_dims is not None:
+            params["spatial_dims"] = spatial_dims
+        return self.residual(u, params)

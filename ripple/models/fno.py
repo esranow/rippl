@@ -191,3 +191,38 @@ class FNO2d(nn.Module):
         x = self.fc2(x)
         
         return x
+
+@register_model("fno")
+class FNO(nn.Module):
+    def __init__(
+        self,
+        n_modes: int,
+        width: int,
+        input_dim: int,
+        output_dim: int = 1,
+        **kwargs
+    ):
+        super().__init__()
+        self.input_dim = input_dim
+        if input_dim == 1:
+            self.model = FNO1d(
+                input_dim=1, # Coords usually (x,t) or just (x)
+                output_dim=output_dim,
+                modes=n_modes,
+                width=width,
+                **kwargs
+            )
+        elif input_dim == 2:
+            self.model = FNO2d(
+                input_dim=input_dim,
+                output_dim=output_dim,
+                modes1=n_modes,
+                modes2=n_modes,
+                width=width,
+                **kwargs
+            )
+        else:
+            raise ValueError(f"FNO input_dim {input_dim} not supported.")
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self.model(x)

@@ -45,7 +45,7 @@ def test_residual_calculation():
     u = analytic_wave_1d(inputs, c=v)
     
     # Compute residual
-    res = eq.compute_residual(u, inputs)
+    res = eq.compute_residual(u, inputs, spatial_dims=1)
     
     # Check if residual is close to zero
     assert torch.allclose(res, torch.zeros_like(res), atol=1e-4)

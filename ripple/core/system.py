@@ -42,6 +42,18 @@ class Constraint:
     value: Union[Callable, torch.Tensor]  # target value or callable(coords)
 
 
+@dataclass
+class NeumannConstraint:
+    def __init__(self, field: str, coords: torch.Tensor,
+                 normal_direction: int, value: Union[Callable, torch.Tensor]):
+        # enforces ∂u/∂n = value at coords
+        # normal_direction: 0=x, 1=y, 2=z
+        self.field = field
+        self.coords = coords
+        self.normal_direction = normal_direction
+        self.value = value
+
+
 class System:
     """
     Top-level container: Equation + Domain + Constraints.
@@ -56,13 +68,15 @@ class System:
         self,
         equation: Any, # Can be Equation or EquationSystem
         domain: Domain,
-        constraints: Optional[List[Constraint]] = None,
-        fields: Optional[List[str]] = None
+        constraints: Optional[List[Union[Constraint, NeumannConstraint]]] = None,
+        fields: Optional[List[str]] = None,
+        particular_solution: Optional[Callable] = None
     ):
         self.equation = equation
         self.domain = domain
-        self.constraints: List[Constraint] = constraints or []
+        self.constraints: List[Union[Constraint, NeumannConstraint]] = constraints or []
         self.fields = fields or ["u"]
+        self.particular_solution = particular_solution
 
     def validate_fields(self, field_dict: Dict[str, torch.Tensor]):
         """Enforces shape (B, N, 1) per field as per Phase 3 contract."""

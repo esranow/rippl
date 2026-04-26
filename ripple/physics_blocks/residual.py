@@ -88,7 +88,7 @@ class HybridWaveResidualBlock(nn.Module):
             equation: ripple.physics.equation.Equation instance.
             inputs: cat([x, t]) with requires_grad=True — same tensor model used.
         """
-        res = equation.compute_residual(u, inputs)
+        res = equation.compute_residual(u, inputs, spatial_dims=self.spatial_dim)
 
         if self.use_correction and self.correction_net is not None:
             nn_in = torch.cat([u, inputs], dim=-1)
