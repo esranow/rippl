@@ -9,11 +9,11 @@ Repository: https://github.com/esranow/rippleml
 ## Features
 
 - **Models**: MLP, Fourier-feature MLP, SIREN, Fourier Neural Operator (FNO)
-- **Physics Core**: PDE specification, automatic differentiation–based residuals, boundary conditions (Dirichlet, Neumann, Periodic)
+- **Physics Core**: PDE specification, autograd-based residuals, Conservative Flux wrappers (StreamFunction, VectorPotential), BCs (Dirichlet, Neumann, Periodic)
 - **Physics Blocks**: Modular physics-aware neural layers combining fixed operators with learnable corrections
 - **Solvers**: Finite-difference and spectral solvers for controlled validation
-- **Training**: Unified engine supporting PINN and operator learning with mixed precision
-- **Diagnostics**: Error metrics, energy functionals, spectral-domain analysis
+- **Training**: Causal weighting (binned/continuous), Adaptive loss weighting (NTK, GradNorm), and PINN/Operator learning engine
+- **Diagnostics**: Physics Validator (residual/constraint auditing), energy functionals, spectral-domain analysis
 - **IO**: Checkpointing, TorchScript/ONNX export, structured experiment metadata
 
 ---
@@ -106,6 +106,17 @@ Run specific test modules:
 pytest ripple/tests/test_models.py
 pytest ripple/tests/test_physics.py
 ```
+
+## Known Limitations
+
+**CRITICAL: High-Fidelity Physics Warnings**
+
+- **Shock Capturing**: No native support for WENO, TVD, or flux limiters. Inviscid hyperbolic PDEs (e.g., inviscid Burgers) will exhibit Gibbs oscillations.
+- **Non-Dimensionalization**: No automated scaling for disparate physical constants. Users must manually normalize systems with high stiffness or high Reynolds numbers.
+- **Dynamic Topologies**: Hard constraints are currently limited to static geometries. Time-dependent distance fields ($B(t)$) are unsupported.
+- **Uncertainty Quantification**: Predictions are deterministic. No native support for Bayesian PINNs or ensembles.
+
+For full technical details, see [LIMITATIONS.md](ripple/LIMITATIONS.md).
 
 ## License
 
