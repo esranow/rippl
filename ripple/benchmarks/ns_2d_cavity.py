@@ -13,10 +13,12 @@ def run_ns_benchmark():
     
     domain = Domain(mins=[0.0, 0.0, 0.0], maxs=[1.0, 1.0, 1.0]) # x, y, t
     
-    model = system_engine.suggested_model() # Corrected from suggest_model
+    from ripple.physics.conservative import StreamFunctionModel
+    model = system_engine.suggested_model()
+    model = StreamFunctionModel(model)
     
-    # Placeholder for actual benchmark configuration
     # lr=1e-4, grad_clip=1.0
+    # causal_training=True, adaptive_loss=True
     pass
 
 def main():

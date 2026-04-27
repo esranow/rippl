@@ -14,8 +14,8 @@ class Operator:
     def __init__(self, field: str = "u"):
         self.field = field
 
-    def forward(self, fields: dict, coords: torch.Tensor, 
-                derived: dict = None) -> torch.Tensor:
+    def forward(self, fields: Dict[str, torch.Tensor], coords: torch.Tensor, derived: Dict[str, torch.Tensor] = None) -> torch.Tensor: # fields: {name: (N, 1)}, coords: (N, D), derived: {name: (N, 1)}
+        """Low-level tensor operation implementing the physics of the operator."""
         raise NotImplementedError
 
     def compute(self, field: torch.Tensor, params: Dict[str, Any]) -> torch.Tensor:

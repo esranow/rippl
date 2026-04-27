@@ -23,8 +23,8 @@ class Equation:
         self.terms = terms
         self.forcing = forcing  # callable(params) -> tensor | None
 
-    def residual(self, field: torch.Tensor, params: Dict[str, Any]) -> torch.Tensor:
-        """Returns residual tensor (same shape as field)."""
+    def residual(self, field: torch.Tensor, params: Dict[str, Any]) -> torch.Tensor: # field: (N, 1)
+        """Sum terms and subtract forcing to compute the pointwise residual."""
         out = torch.zeros_like(field)
         for coeff, op in self.terms:
             out = out + coeff * op.compute(field, params)
@@ -32,10 +32,8 @@ class Equation:
             out = out - self.forcing(params)
         return out
 
-    def compute_residual(self, u: torch.Tensor, inputs: torch.Tensor, spatial_dims: int = None) -> torch.Tensor:
-        """Single entry-point for Experiment and all callers.
-        Collects and precomputes all required derivatives.
-        """
+    def compute_residual(self, u: torch.Tensor, inputs: torch.Tensor, spatial_dims: int = None) -> torch.Tensor: # u: (N, 1), inputs: (N, D)
+        """Orchestrate derivative precomputation and residual evaluation."""
         if not inputs.requires_grad:
             inputs = inputs.requires_grad_(True)
         

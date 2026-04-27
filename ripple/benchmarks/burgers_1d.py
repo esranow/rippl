@@ -17,6 +17,7 @@ def run_burgers_benchmark():
     ])
     
     # lr=5e-4, grad_clip=0.5
+    # causal_training=True, adaptive_loss=True
     pass
 
 def main():

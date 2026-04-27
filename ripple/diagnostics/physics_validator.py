@@ -1,107 +1,97 @@
 import torch
 import json
-from typing import List, Dict, Any
+from typing import Dict, List, Optional, Any
+from ripple.core.system import System
 from ripple.core.equation_system import EquationSystem
 
 class PhysicsValidator:
-    def __init__(self, system, model, coords: torch.Tensor):
+    """Validator for PDE residuals, constraints, and conservation laws."""
+    def __init__(self, system: System, model: torch.nn.Module, coords: torch.Tensor):
         self.system = system
         self.model = model
         self.coords = coords
-    
-    def residual_stats(self) -> dict:
-        self.coords.requires_grad_(True)
+
+    def residual_stats(self) -> Dict[str, Any]:
+        """Compute statistics for PDE residuals."""
+        # Enable gradients for residual computation
+        if not self.coords.requires_grad:
+            self.coords = self.coords.clone().detach().requires_grad_(True)
+        
         u_out = self.model(self.coords)
         fields = u_out if isinstance(u_out, dict) else {"u": u_out}
-        spatial_dims = self.system.domain.spatial_dims
         
         if isinstance(self.system.equation, EquationSystem):
-            res_list = self.system.equation.compute_residuals(fields, self.coords, spatial_dims=spatial_dims)
-            # Combine residuals (abs sum for stats)
-            res = torch.cat([r.view(-1) for r in res_list])
+            residuals = self.system.equation.compute_residuals(fields, self.coords)
+            res = torch.cat(residuals)
         else:
-            res = self.system.equation.compute_residual(fields["u"], self.coords, spatial_dims=spatial_dims)
+            res = self.system.equation.compute_residual(fields["u"], self.coords)
         
-        res_abs = res.abs()
-        stats = {
-            "mean": float(res_abs.mean()),
-            "max": float(res_abs.max()),
-            "std": float(res_abs.std()),
-            "l2": float(torch.sqrt((res**2).mean())),
-            "passed": bool(res_abs.mean() < 1e-2)
-        }
-        return stats
-    
-    def constraint_satisfaction(self) -> dict:
-        results = {}
+        # Now compute stats without grad
+        with torch.no_grad():
+            mean_res = torch.mean(torch.abs(res)).item()
+            return {
+                "mean": mean_res,
+                "max": torch.max(torch.abs(res)).item(),
+                "std": torch.std(res).item(),
+                "l2": torch.norm(res).item(),
+                "passed": mean_res < 1e-2
+            }
+
+    def constraint_satisfaction(self) -> Dict[int, Dict[str, Any]]:
+        """Compute error for each constraint."""
+        stats = {}
         import torch.nn.functional as F
         from ripple.core.system import NeumannConstraint
         
         for i, c in enumerate(self.system.constraints):
-            c_coords = c.coords.requires_grad_(True)
-            u_pred_all = self.model(c_coords)
-            fields_c = u_pred_all if isinstance(u_pred_all, dict) else {"u": u_pred_all}
-            u_pred = fields_c[c.field]
-            
+            c_coords = c.coords.to(self.coords.device)
             if isinstance(c, NeumannConstraint):
-                grad = torch.autograd.grad(
-                    u_pred, c_coords,
-                    grad_outputs=torch.ones_like(u_pred),
-                    create_graph=True
-                )[0]
+                # Neumann needs gradients
+                c_coords = c_coords.clone().detach().requires_grad_(True)
+                u_pred_all = self.model(c_coords)
+                fields_c = u_pred_all if isinstance(u_pred_all, dict) else {"u": u_pred_all}
+                u_pred = fields_c[c.field]
+                grad = torch.autograd.grad(u_pred.sum(), c_coords, create_graph=True)[0]
                 val_pred = grad[..., c.normal_direction : c.normal_direction + 1]
             else:
-                val_pred = u_pred
+                with torch.no_grad():
+                    u_pred_all = self.model(c_coords)
+                    fields_c = u_pred_all if isinstance(u_pred_all, dict) else {"u": u_pred_all}
+                    val_pred = fields_c[c.field]
             
-            u_target = c.value(c_coords) if callable(c.value) else c.value
-            if isinstance(u_target, (float, int)):
-                u_target = torch.full_like(val_pred, float(u_target))
-            
-            error = float(F.mse_loss(val_pred, u_target))
-            results[i] = {"error": error, "passed": error < 1e-3}
-        return results
-    
-    def conservation_check(self, laws: list, time_coords_list: list) -> dict:
-        # laws: list of ConservationLaw
-        # time_coords_list: list of coords tensors for different times
-        results = {}
-        for law in laws:
-            drifts = []
-            if law.reference is None:
-                law.set_reference(self.model, time_coords_list[0])
+            with torch.no_grad():
+                u_target = c.value(c_coords) if callable(c.value) else c.value
+                if isinstance(u_target, (float, int)):
+                    u_target = torch.full_like(val_pred, float(u_target))
                 
-            for tc in time_coords_list:
-                drifts.append(law.is_satisfied(self.model, tc))
-            
-            # Simple check if all satisfied
-            results[law.name] = {
-                "drift": float(law.penalty(self.model, time_coords_list[-1]).sqrt()),
-                "passed": all(drifts)
+                error = F.mse_loss(val_pred, u_target).item()
+                stats[i] = {"error": error, "passed": error < 1e-3}
+        return stats
+
+    def conservation_check(self, laws: List, time_coords: torch.Tensor) -> Dict[str, Dict[str, Any]]:
+        """Check conservation laws over time."""
+        stats = {}
+        for law in laws:
+            drift = law.penalty(self.model, time_coords).item()
+            stats[law.name] = {
+                "drift": drift,
+                "passed": law.is_satisfied(self.model, time_coords)
             }
-        return results
-    
-    def full_report(self) -> dict:
-        res_s = self.residual_stats()
-        const_s = self.constraint_satisfaction()
-        
+        return stats
+
+    def full_report(self) -> Dict[str, Any]:
+        """Runs all checks and prints formatted summary."""
         report = {
-            "residuals": res_s,
-            "constraints": const_s
+            "residuals": self.residual_stats(),
+            "constraints": self.constraint_satisfaction()
         }
-        
-        print("\n" + "="*30)
-        print("PHYSICS VALIDATION REPORT")
-        print("="*30)
-        print(f"Residual Mean: {res_s['mean']:.2e} [{'PASSED' if res_s['passed'] else 'FAILED'}]")
-        print(f"Residual Max : {res_s['max']:.2e}")
-        print("-"*30)
-        for i, c in const_s.items():
-            print(f"Constraint {i}: error={c['error']:.2e} [{'PASSED' if c['passed'] else 'FAILED'}]")
-        print("="*30 + "\n")
-        
+        print("\n--- Physics Validator Report ---")
+        print(f"Residual Mean: {report['residuals']['mean']:.6f} [{'PASSED' if report['residuals']['passed'] else 'FAILED'}]")
+        for i, s in report["constraints"].items():
+            print(f"Constraint {i} Error: {s['error']:.6f} [{'PASSED' if s['passed'] else 'FAILED'}]")
         return report
-    
+
     def export_report(self, path: str):
-        report = self.full_report()
+        """Saves full_report() as JSON."""
         with open(path, "w") as f:
-            json.dump(report, f, indent=4)
+            json.dump(self.full_report(), f, indent=4)

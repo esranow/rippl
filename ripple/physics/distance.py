@@ -2,9 +2,8 @@ import torch
 import torch.nn as nn
 
 class DistanceFunction:
-    def __call__(self, coords: torch.Tensor) -> torch.Tensor:
-        # returns shape (N, 1) — zero on boundary, positive interior
-        raise NotImplementedError
+    def __call__(self, coords: torch.Tensor) -> torch.Tensor: # coords: (N, D)
+        """Evaluate the distance function to return a (N, 1) tensor."""
 
 class BoxDistance(DistanceFunction):
     def __init__(self, bounds: list):
@@ -31,7 +30,8 @@ class HardConstraintWrapper(torch.nn.Module):
         self.distance_fn = distance_fn
         self.particular_solution = particular_solution
     
-    def forward(self, coords):
+    def forward(self, coords: torch.Tensor) -> torch.Tensor: # coords: (N, D)
+        """Apply the hard constraint transformation: u = D*NN + G."""
         D = self.distance_fn(coords)
         u_raw = self.model(coords)
         

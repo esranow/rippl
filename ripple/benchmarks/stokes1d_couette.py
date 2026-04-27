@@ -54,7 +54,8 @@ def main():
     # 5. Model & Training Setup
     # MultiFieldMLP expects (N, in_dim) inputs.
     model = MultiFieldMLP(fields=["u", "p"], in_dim=1, hidden=20, layers=2)
-    opt = torch.optim.Adam(model.parameters(), lr=1e-2)
+    opt = torch.optim.Adam(model.parameters(), lr=1e-3)
+    # grad_clip=1.0
     
     exp = Experiment(sys, model, opt)
     

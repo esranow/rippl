@@ -1,34 +1,36 @@
 import torch
+import torch.nn as nn
 from typing import Callable, Optional
 
 class ConservationLaw:
+    """Base class for conservation law penalties."""
     def __init__(self, name: str, quantity_fn: Callable, tolerance: float = 1e-3):
-        # quantity_fn: (model, coords) → scalar quantity to be conserved
         self.name = name
         self.quantity_fn = quantity_fn
         self.tolerance = tolerance
-        self.reference = None  # set at start of training
-    
-    def set_reference(self, model, coords):
-        # compute and store reference value at t=0
+        self.reference = None
+
+    def set_reference(self, model: nn.Module, coords: torch.Tensor):
+        """Store reference value (e.g. at t=0) with no_grad."""
         with torch.no_grad():
             self.reference = self.quantity_fn(model, coords)
-    
-    def penalty(self, model, coords) -> torch.Tensor:
+
+    def penalty(self, model: nn.Module, coords: torch.Tensor) -> torch.Tensor:
+        """(quantity - reference)² penalty."""
         if self.reference is None:
             return torch.tensor(0.0, device=coords.device)
-        quantity = self.quantity_fn(model, coords)
-        return (quantity - self.reference)**2
-    
-    def is_satisfied(self, model, coords) -> bool:
+        current = self.quantity_fn(model, coords)
+        return torch.mean((current - self.reference)**2)
+
+    def is_satisfied(self, model: nn.Module, coords: torch.Tensor) -> bool:
+        """Check if |quantity-reference|/|reference| < tolerance."""
         if self.reference is None:
             return True
         with torch.no_grad():
-            quantity = self.quantity_fn(model, coords)
-            if abs(self.reference) < 1e-12:
-                return abs(quantity) < self.tolerance
-            drift = abs(quantity - self.reference) / abs(self.reference)
-            return drift < self.tolerance
+            current = self.quantity_fn(model, coords)
+            error = torch.abs(current - self.reference)
+            rel_error = error / (torch.abs(self.reference) + 1e-8)
+            return torch.max(rel_error).item() < self.tolerance
 
 class EnergyConservation(ConservationLaw):
     def __init__(self, energy_fn: Callable, tolerance: float = 1e-3):
@@ -36,17 +38,17 @@ class EnergyConservation(ConservationLaw):
 
 class MassConservation(ConservationLaw):
     def __init__(self, field: str = "u", tolerance: float = 1e-3):
-        # quantity: ∫u dx approximated by mean over coords
-        def quantity_fn(model, coords):
+        def quantity(model, coords):
             u_out = model(coords)
-            fields = u_out if isinstance(u_out, dict) else {"u": u_out}
-            return fields[field].mean()
-        super().__init__("mass", quantity_fn, tolerance)
+            u = u_out[field] if isinstance(u_out, dict) else u_out
+            return torch.mean(u)
+        super().__init__("mass", quantity, tolerance)
 
 class MomentumConservation(ConservationLaw):
     def __init__(self, field: str = "u", tolerance: float = 1e-3):
-        def quantity_fn(model, coords):
+        def quantity(model, coords):
             u_out = model(coords)
-            fields = u_out if isinstance(u_out, dict) else {"u": u_out}
-            return (fields[field] * coords[:, 0:1]).mean()
-        super().__init__("momentum", quantity_fn, tolerance)
+            u = u_out[field] if isinstance(u_out, dict) else u_out
+            # momentum approx integral(u * x)
+            return torch.mean(u * coords[:, 0:1])
+        super().__init__("momentum", quantity, tolerance)

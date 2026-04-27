@@ -17,10 +17,8 @@ class EquationSystem:
         self.equations = equations
         self.weights = weights if weights is not None else [1.0] * len(equations)
         
-    def compute_residuals(self, fields: Dict[str, torch.Tensor], coords: torch.Tensor, spatial_dims: int = None) -> List[torch.Tensor]:
-        """
-        Computes residual for each equation.
-        """
+    def compute_residuals(self, fields: Dict[str, torch.Tensor], coords: torch.Tensor, spatial_dims: int = None) -> List[torch.Tensor]: # fields: {name: (N, 1)}, coords: (N, D)
+        """Compute residuals for all equations in the system simultaneously."""
         if not coords.requires_grad:
             coords = coords.requires_grad_(True)
             
@@ -48,8 +46,8 @@ class EquationSystem:
             
         return residuals
 
-    def compute_loss(self, fields: Dict[str, torch.Tensor], coords: torch.Tensor, spatial_dims: int = None) -> torch.Tensor:
-        """Weighted MSE sum of all residuals."""
+    def compute_loss(self, fields: Dict[str, torch.Tensor], coords: torch.Tensor, spatial_dims: int = None) -> torch.Tensor: # fields: {name: (N, 1)}, coords: (N, D)
+        """Calculate the scalar weighted MSE loss across all system residuals."""
         residuals = self.compute_residuals(fields, coords, spatial_dims=spatial_dims)
         loss = torch.tensor(0.0, device=coords.device)
         for res, weight in zip(residuals, self.weights):

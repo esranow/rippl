@@ -1,6 +1,7 @@
 import torch
 import torch.optim as optim
 import torch.nn.functional as F
+from typing import Dict, List, Any
 from ripple.core.equation_system import EquationSystem
 
 class InverseParameter:
@@ -12,11 +13,13 @@ class InverseParameter:
         self.value = torch.nn.Parameter(torch.tensor(initial_value, dtype=torch.float32))
     
     def get(self) -> torch.Tensor:
+        """Apply transformation and return the current parameter value."""
         if self.transform:
             return self.transform(self.value)
         return self.value
     
     def bounds_penalty(self) -> torch.Tensor:
+        """Compute the quadratic penalty for parameter values outside specified bounds."""
         if not self.bounds:
             return torch.tensor(0.0, device=self.value.device)
         
@@ -41,7 +44,8 @@ class InverseProblem:
         self.observed_values = observed_values
         self.data_weight = data_weight
     
-    def train(self, epochs=5000, lr=1e-3):
+    def train(self, epochs: int = 5000, lr: float = 1e-3) -> Dict[str, float]:
+        """Minimize the joint loss to recover parameters and fit the data."""
         # 1. Optimizer includes model parameters AND inverse parameters
         optimizer = optim.Adam([
             {'params': self.model.parameters()},
@@ -105,5 +109,6 @@ class InverseProblem:
         
         return self.result()
     
-    def result(self) -> dict:
+    def result(self) -> Dict[str, float]:
+        """Export the final estimated parameter values."""
         return {p.name: p.get().item() for p in self.parameters}

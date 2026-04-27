@@ -74,8 +74,8 @@ class System:
         self.fields = fields or ["u"]
         self.particular_solution = particular_solution
 
-    def validate_fields(self, field_dict: Dict[str, torch.Tensor]):
-        """Enforces shape (B, N, 1) per field as per Phase 3 contract."""
+    def validate_fields(self, field_dict: Dict[str, torch.Tensor]) -> None:
+        """Verify that the provided field tensors match the system specification."""
         for name, tensor in field_dict.items():
             if name not in self.fields:
                 raise RippleValidationError(f"Field '{name}' not defined in system.")
@@ -83,8 +83,8 @@ class System:
             if tensor.shape[-1] != 1:
                  raise RippleValidationError(f"Field '{name}' must have trailing dimension 1, got {tensor.shape}")
 
-    def validate(self):
-        """Robust validation of system components and dimensions."""
+    def validate(self) -> bool:
+        """Perform a full integrity check on the system components."""
         if self.equation is None:
             raise RippleValidationError("Equation must be set.")
         
