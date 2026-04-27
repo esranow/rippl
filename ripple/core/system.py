@@ -6,7 +6,7 @@ import torch
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Union, Callable
 
-from ripple.physics.equation import Equation
+from ripple.core.equation import Equation
 from ripple.core.exceptions import RippleValidationError
 
 
@@ -44,14 +44,10 @@ class Constraint:
 
 @dataclass
 class NeumannConstraint:
-    def __init__(self, field: str, coords: torch.Tensor,
-                 normal_direction: int, value: Union[Callable, torch.Tensor]):
-        # enforces ∂u/∂n = value at coords
-        # normal_direction: 0=x, 1=y, 2=z
-        self.field = field
-        self.coords = coords
-        self.normal_direction = normal_direction
-        self.value = value
+    field: str
+    coords: torch.Tensor
+    normal_direction: int
+    value: Union[Callable, torch.Tensor]
 
 
 class System:

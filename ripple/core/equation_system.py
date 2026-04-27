@@ -4,7 +4,7 @@ ripple.core.equation_system — Manages multiple coupled equations.
 from __future__ import annotations
 import torch
 from typing import Any, Dict, List, Optional
-from ripple.physics.equation import Equation
+from ripple.core.equation import Equation
 
 class EquationSystem:
     """
