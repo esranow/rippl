@@ -1,13 +1,13 @@
-# Contributing to Ripple
+# Contributing to Rippl
 
-Thank you for your interest in contributing to Ripple!
+Thank you for your interest in contributing to Rippl!
 
 ## Development Setup
 
 1. Clone the repository
 2. Install in development mode:
    ```bash
-   cd ripple
+   cd rippl
    pip install -e .
    pip install pytest
    ```
@@ -37,12 +37,12 @@ All contributions must follow these strict guidelines:
 Every module must include unit tests:
 
 ```bash
-pytest ripple/tests
+pytest rippl/tests
 ```
 
 Run specific test files:
 ```bash
-pytest ripple/tests/test_models.py -v
+pytest rippl/tests/test_models.py -v
 ```
 
 ## Pull Request Process

@@ -1,8 +1,8 @@
-# ripple
+# rippl
 
-ripple is a PyTorch library for physics-informed neural networks (PINNs) and operator learning. It provides structured components for modeling differential equations and dynamical systems with neural networks that incorporate differential operators, residual constraints, and spectral transformations.
+rippl is a PyTorch library for physics-informed neural networks (PINNs) and operator learning. It provides structured components for modeling differential equations and dynamical systems with neural networks that incorporate differential operators, residual constraints, and spectral transformations.
 
-Repository: https://github.com/esranow/rippleml
+Repository: https://github.com/esranow/rippl
 
 ---
 
@@ -23,14 +23,14 @@ Repository: https://github.com/esranow/rippleml
 Install directly from GitHub:
 
 ```bash
-pip install git+https://github.com/esranow/rippleml.git
+pip install git+https://github.com/esranow/rippl.git
 ```
 
 Or for local development:
 
 ```bash
-git clone https://github.com/esranow/rippleml.git
-cd rippleml
+git clone https://github.com/esranow/rippl.git
+cd rippl
 pip install -e .
 ```
 
@@ -39,25 +39,25 @@ pip install -e .
 ### Training a PINN
 
 ```bash
-python -m ripple.cli --config ripple/configs/demo_pinn_1d.yaml
+python -m rippl.cli --config rippl/configs/demo_pinn_1d.yaml
 ```
 
 ### Running Tests
 
 ```bash
-pytest ripple/tests
+pytest rippl/tests
 ```
 
 ### Example: Prediction and Plotting
 
 ```bash
-python ripple/examples/predict_and_plot.py
+python rippl/examples/predict_and_plot.py
 ```
 
 ## Project Structure
 
 ```
-ripple/
+rippl/
 ├── models/          # Neural network architectures
 ├── physics/         # PDE specifications and residual construction
 ├── physics_blocks/  # Modular physics-aware neural layers
@@ -97,14 +97,14 @@ training:
 All modules include unit tests. Run the full test suite:
 
 ```bash
-pytest ripple/tests -v
+pytest rippl/tests -v
 ```
 
 Run specific test modules:
 
 ```bash
-pytest ripple/tests/test_models.py
-pytest ripple/tests/test_physics.py
+pytest rippl/tests/test_models.py
+pytest rippl/tests/test_physics.py
 ```
 
 ## Known Limitations
@@ -116,7 +116,7 @@ pytest ripple/tests/test_physics.py
 - **Dynamic Topologies**: Hard constraints are currently limited to static geometries. Time-dependent distance fields ($B(t)$) are unsupported.
 - **Uncertainty Quantification**: Predictions are deterministic. No native support for Bayesian PINNs or ensembles.
 
-For full technical details, see [LIMITATIONS.md](ripple/LIMITATIONS.md).
+For full technical details, see [LIMITATIONS.md](rippl/LIMITATIONS.md).
 
 ## License
 

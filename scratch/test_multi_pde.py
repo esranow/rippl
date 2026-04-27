@@ -1,10 +1,10 @@
 
 import torch
 import torch.nn as nn
-from ripple.core.system import System, Domain, Constraint
-from ripple.physics.equation import Equation
-from ripple.physics.operators import TimeDerivative, Laplacian, Diffusion, Advection
-from ripple.core.simulation import Simulation, run_system
+from rippl.core.system import System, Domain, Constraint
+from rippl.physics.equation import Equation
+from rippl.physics.operators import TimeDerivative, Laplacian, Diffusion, Advection
+from rippl.core.simulation import Simulation, run_system
 
 def test_systems():
     # 1D Domain
@@ -66,7 +66,7 @@ def test_systems():
             x = torch.linspace(0, 1, 10).view(-1, 1)
             t = torch.linspace(0, 1, 10).view(-1, 1)
             
-            from ripple.core.experiment import Experiment
+            from rippl.core.experiment import Experiment
             exp = Experiment(sys, model, opt)
             loss = exp.train(x, t)
             

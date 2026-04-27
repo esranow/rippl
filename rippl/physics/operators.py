@@ -1,0 +1,557 @@
+"""
+rippl.physics.operators — Operator base + concrete implementations.
+Reuses autograd patterns from rippl.physics.residuals.
+"""
+from __future__ import annotations
+import torch
+import torch.nn as nn
+from typing import Any, Dict, List, Optional
+
+
+class Operator:
+    """Abstract base: forward(fields, coords, derived) -> tensor."""
+
+    def __init__(self, field: str = "u"):
+        self.field = field
+
+    def forward(self, fields: Dict[str, torch.Tensor], coords: torch.Tensor, derived: Dict[str, torch.Tensor] = None) -> torch.Tensor: # fields: {name: (N, 1)}, coords: (N, D), derived: {name: (N, 1)}
+        """Low-level tensor operation implementing the physics of the operator."""
+        raise NotImplementedError
+
+    def compute(self, field: torch.Tensor, params: Dict[str, Any]) -> torch.Tensor:
+        """Backward compatibility for compute()."""
+        fields = params.get("fields", {self.field: field})
+        coords = params["inputs"]
+        derived = params.get("derived", {}).copy()
+        if "spatial_dims" in params:
+            derived["spatial_dims"] = params["spatial_dims"]
+        return self.forward(fields, coords, derived)
+
+    def signature(self) -> Dict[str, Any]:
+        return {
+            "inputs": [self.field],
+            "output": self.field,
+            "order": 0,
+            "type": "generic",
+            "requires_derived": []
+        }
+
+
+# ---------------------------------------------------------------------------
+# Linear Operators (Updated to new contract)
+# ---------------------------------------------------------------------------
+
+class Laplacian(Operator):
+    def signature(self) -> Dict[str, Any]:
+        return {
+            "inputs": [self.field],
+            "output": f"laplacian({self.field})",
+            "order": 2, 
+            "type": "spatial",
+            "requires_derived": [] # Standard Laplacian can still use autograd internally if not precomputed
+        }
+
+    def forward(self, fields, coords, derived=None):
+        u = fields[self.field]
+        inputs = coords
+        # Use spatial_dims from params if provided, else use heuristic
+        # If we have derived dict, we can check for 't' derivative requirements,
+        # but the safest is to trust the caller.
+        spatial_dim = inputs.shape[-1]
+        if derived is not None and any("_t" in k for k in derived.keys()):
+             spatial_dim = inputs.shape[-1] - 1
+        
+        # Override with explicit params if they exist
+        # This is where Equation.compute_residual passes it.
+        # But wait, 'params' is not passed to forward. 
+        # Ah, compute() passes it in 'derived' or we should change forward signature?
+        # Actually, Equation.compute_residual passes it in params to residual(), 
+        # which passes it to op.compute().
+        # So I'll check if 'spatial_dims' was passed through some channel.
+        # Currently op.compute() does:
+        # fields = params.get("fields", {self.field: field})
+        # coords = params["inputs"]
+        # derived = params.get("derived", {})
+        # return self.forward(fields, coords, derived)
+        
+        # I'll update forward to accept **kwargs or just use derived as a side channel?
+        # Let's check if we can pass it in derived.
+        if derived and "spatial_dims" in derived:
+            spatial_dim = derived["spatial_dims"]
+
+        grads = torch.autograd.grad(
+            u, inputs,
+            grad_outputs=torch.ones_like(u),
+            create_graph=True,
+            retain_graph=True,
+        )[0]
+
+        laplacian = torch.zeros_like(u)
+        for i in range(spatial_dim):
+            gi = grads[..., i : i + 1]
+            ggi = torch.autograd.grad(
+                gi, inputs,
+                grad_outputs=torch.ones_like(gi),
+                create_graph=True,
+                retain_graph=True,
+                allow_unused=True,
+            )[0]
+            if ggi is not None:
+                laplacian = laplacian + ggi[..., i : i + 1]
+        return laplacian
+
+
+class Gradient(Operator):
+    def signature(self) -> Dict[str, Any]:
+        return {
+            "inputs": [self.field],
+            "output": f"grad({self.field})",
+            "order": 1, 
+            "type": "spatial",
+            "requires_derived": []
+        }
+
+    def forward(self, fields, coords, derived=None):
+        u = fields[self.field]
+        inputs = coords
+        spatial_dim = inputs.shape[-1]
+        if derived and "spatial_dims" in derived:
+            spatial_dim = derived["spatial_dims"]
+        elif derived is not None and any("_t" in k for k in derived.keys()):
+            spatial_dim = inputs.shape[-1] - 1
+            
+        grads = torch.autograd.grad(
+            u, inputs,
+            grad_outputs=torch.ones_like(u),
+            create_graph=True,
+            retain_graph=True,
+        )[0]
+        return grads[..., :spatial_dim]
+
+
+class Divergence(Operator):
+    def signature(self) -> Dict[str, Any]:
+        return {
+            "inputs": [self.field],
+            "output": f"div({self.field})",
+            "order": 1, 
+            "type": "spatial",
+            "requires_derived": []
+        }
+
+    def forward(self, fields, coords, derived=None):
+        u = fields[self.field]
+        inputs = coords
+        spatial_dim = inputs.shape[-1]
+        if derived and "spatial_dims" in derived:
+            spatial_dim = derived["spatial_dims"]
+        elif derived is not None and any("_t" in k for k in derived.keys()):
+            spatial_dim = inputs.shape[-1] - 1
+        
+        div = torch.zeros(u.shape[:-1] + (1,), device=u.device)
+        for i in range(spatial_dim):
+            vi = u[..., i:i+1]
+            gi = torch.autograd.grad(
+                vi, inputs,
+                grad_outputs=torch.ones_like(vi),
+                create_graph=True,
+                retain_graph=True,
+                allow_unused=True
+            )[0]
+            if gi is not None:
+                div = div + gi[..., i:i+1]
+        return div
+
+
+class TimeDerivative(Operator):
+    def __init__(self, order: int = 1, field: str = "u"):
+        super().__init__(field=field)
+        self.order = order
+
+    def signature(self) -> Dict[str, Any]:
+        return {
+            "inputs": [self.field],
+            "output": f"dt^{self.order}({self.field})",
+            "order": self.order,
+            "type": "temporal",
+            "requires_derived": []
+        }
+
+    def forward(self, fields, coords, derived=None):
+        u = fields[self.field]
+        inputs = coords
+        for _ in range(self.order):
+            g = torch.autograd.grad(
+                u.sum(), inputs,
+                create_graph=True,
+                retain_graph=True,
+                allow_unused=True,
+            )[0]
+            u = g[..., -1:] if g is not None else torch.zeros_like(u)
+        return u
+
+
+class Diffusion(Operator):
+    def __init__(self, alpha: float, field: str = "u"):
+        super().__init__(field=field)
+        self.alpha = alpha
+        self.laplacian = Laplacian(field=field)
+
+    def signature(self) -> Dict[str, Any]:
+        return {
+            "inputs": [self.field],
+            "output": f"diffusion({self.field})",
+            "order": 2, 
+            "type": "spatial",
+            "requires_derived": []
+        }
+
+    def forward(self, fields, coords, derived=None):
+        return self.alpha * self.laplacian.forward(fields, coords, derived)
+
+
+class Advection(Operator):
+    def __init__(self, v: float, field: str = "u"):
+        super().__init__(field=field)
+        self.v = v
+        self.gradient = Gradient(field=field)
+
+    def signature(self) -> Dict[str, Any]:
+        return {
+            "inputs": [self.field],
+            "output": f"advection({self.field})",
+            "order": 1, 
+            "type": "spatial",
+            "requires_derived": []
+        }
+
+    def forward(self, fields, coords, derived=None):
+        grad = self.gradient.forward(fields, coords, derived)
+        return self.v * grad[..., 0:1]
+
+
+class Source(Operator):
+    def __init__(self, fn, field: str = "u"):
+        super().__init__(field=field)
+        self.fn = fn
+
+    def signature(self) -> Dict[str, Any]:
+        return {
+            "inputs": [self.field],
+            "output": f"source({self.field})",
+            "order": 0, 
+            "type": "source",
+            "requires_derived": []
+        }
+
+    def forward(self, fields, coords, derived=None):
+        u = fields[self.field]
+        params = {"inputs": coords, "fields": fields, "derived": derived}
+        return self.fn(u, params)
+
+
+class Nonlinear(Operator):
+    def __init__(self, fn, field: str = "u"):
+        super().__init__(field=field)
+        self.fn = fn
+
+    def signature(self) -> Dict[str, Any]:
+        return {
+            "inputs": [self.field],
+            "output": f"nonlinear({self.field})",
+            "order": 0, 
+            "type": "nonlinear",
+            "requires_derived": []
+        }
+
+    def forward(self, fields, coords, derived=None):
+        u = fields[self.field]
+        params = {"inputs": coords, "fields": fields, "derived": derived}
+        return self.fn(u, params)
+
+
+# ---------------------------------------------------------------------------
+# Part B: Nonlinear Operators
+# ---------------------------------------------------------------------------
+
+class BurgersAdvection(Operator):
+    # u * ∂u/∂x — requires u_x precomputed
+    def __init__(self, field="u", spatial_dim=0):
+        super().__init__(field=field)
+        self.spatial_dim = spatial_dim
+        self._dim_name = ["x", "y", "z"][spatial_dim]
+    
+    def signature(self):
+        return {
+            "inputs": [self.field],
+            "output": self.field,
+            "order": 1,
+            "type": "burgers_advection",
+            "requires_derived": [f"{self.field}_{self._dim_name}"]
+        }
+    
+    def forward(self, fields, coords, derived=None):
+        u = fields[self.field]
+        u_deriv = derived[f"{self.field}_{self._dim_name}"]
+        return u * u_deriv
+
+
+class NonlinearAdvection(Operator):
+    # (u·∇)u — for vector fields, u advects itself
+    # used in Navier-Stokes momentum
+    def __init__(self, field_u="u", field_v="v"):
+        super().__init__(field=field_u)
+        self.field_u = field_u
+        self.field_v = field_v
+    
+    def signature(self):
+        return {
+            "inputs": [self.field_u, self.field_v],
+            "output": self.field_u,
+            "order": 1,
+            "type": "nonlinear_advection",
+            "requires_derived": [
+                f"{self.field_u}_x", f"{self.field_u}_y",
+                f"{self.field_v}_x", f"{self.field_v}_y"
+            ]
+        }
+    
+    def forward(self, fields, coords, derived=None):
+        u = fields[self.field_u]
+        v = fields[self.field_v]
+        u_x = derived[f"{self.field_u}_x"]
+        u_y = derived[f"{self.field_u}_y"]
+        v_x = derived[f"{self.field_v}_x"]
+        v_y = derived[f"{self.field_v}_y"]
+        # returns (conv_u, conv_v) as stacked tensor
+        conv_u = u * u_x + v * u_y
+        conv_v = u * v_x + v * v_y
+        return torch.cat([conv_u, conv_v], dim=-1)
+
+
+class PressureGradient(Operator):
+    # ∂p/∂x or ∂p/∂y
+    def __init__(self, field_p="p", direction=0):
+        super().__init__(field=field_p)
+        self.field_p = field_p
+        self.direction = direction
+        self._dim_name = ["x", "y", "z"][direction]
+    
+    def signature(self):
+        return {
+            "inputs": [self.field_p],
+            "output": self.field_p,
+            "order": 1,
+            "type": f"pressure_gradient_{self._dim_name}",
+            "requires_derived": [f"{self.field_p}_{self._dim_name}"]
+        }
+    
+    def forward(self, fields, coords, derived=None):
+        return derived[f"{self.field_p}_{self._dim_name}"]
+
+
+class VelocityDivergence(Operator):
+    # ∇·u = u_x + v_y — incompressibility constraint
+    def __init__(self, field_u="u", field_v="v"):
+        super().__init__(field=field_u)
+        self.field_u = field_u
+        self.field_v = field_v
+    
+    def signature(self):
+        return {
+            "inputs": [self.field_u, self.field_v],
+            "output": self.field_u,
+            "order": 1,
+            "type": "velocity_divergence",
+            "requires_derived": [
+                f"{self.field_u}_x", f"{self.field_v}_y"
+            ]
+        }
+    
+    def forward(self, fields, coords, derived=None):
+        return derived[f"{self.field_u}_x"] + derived[f"{self.field_v}_y"]
+
+
+# ---------------------------------------------------------------------------
+# Structural Mechanics Operators
+# ---------------------------------------------------------------------------
+
+class StrainTensor(Operator):
+    # ε = 0.5*(∇u + ∇uᵀ)
+    # for 2D: εxx=ux_x, εyy=uy_y, εxy=0.5*(ux_y + uy_x)
+    def __init__(self, field_ux="ux", field_uy="uy"):
+        super().__init__(field=field_ux)
+        self.field_ux = field_ux
+        self.field_uy = field_uy
+    
+    def signature(self):
+        return {
+            "inputs": [self.field_ux, self.field_uy],
+            "output": "strain",
+            "order": 1,
+            "type": "strain_tensor",
+            "requires_derived": [
+                f"{self.field_ux}_x", f"{self.field_ux}_y",
+                f"{self.field_uy}_x", f"{self.field_uy}_y"
+            ]
+        }
+    
+    def forward(self, fields, coords, derived=None):
+        exx = derived[f"{self.field_ux}_x"]
+        eyy = derived[f"{self.field_uy}_y"]
+        exy = 0.5 * (derived[f"{self.field_ux}_y"] + 
+                     derived[f"{self.field_uy}_x"])
+        return torch.cat([exx, eyy, exy], dim=-1)  # (N, 3)
+
+class StressTensor(Operator):
+    # σ = λ*tr(ε)*I + 2μ*ε — linear elasticity constitutive law
+    # λ, μ: Lamé parameters
+    # σxx = (λ+2μ)*εxx + λ*εyy
+    # σyy = λ*εxx + (λ+2μ)*εyy
+    # σxy = 2μ*εxy
+    def __init__(self, lame_lambda=1.0, lame_mu=1.0):
+        super().__init__(field="strain")
+        self.lam = lame_lambda
+        self.mu = lame_mu
+    
+    def signature(self):
+        return {
+            "inputs": ["strain"],
+            "output": "stress",
+            "order": 0,
+            "type": "stress_tensor",
+            "requires_derived": []
+        }
+    
+    def forward(self, fields, coords, derived=None):
+        strain = fields["strain"]  # (N, 3): [exx, eyy, exy]
+        exx, eyy, exy = strain[..., 0:1], strain[..., 1:2], strain[..., 2:3]
+        sxx = (self.lam + 2*self.mu)*exx + self.lam*eyy
+        syy = self.lam*exx + (self.lam + 2*self.mu)*eyy
+        sxy = 2*self.mu*exy
+        return torch.cat([sxx, syy, sxy], dim=-1)  # (N, 3)
+
+class ElasticEquilibrium(Operator):
+    # ∇·σ + f = 0
+    # div(σ)_x = σxx_x + σxy_y
+    # div(σ)_y = σxy_x + σyy_y
+    def __init__(self, field_ux="ux", field_uy="uy",
+                 lame_lambda=1.0, lame_mu=1.0,
+                 body_force_x=0.0, body_force_y=0.0):
+        super().__init__(field=field_ux)
+        self.lam = lame_lambda
+        self.mu = lame_mu
+        self.fx = body_force_x
+        self.fy = body_force_y
+        self.field_ux = field_ux
+        self.field_uy = field_uy
+    
+    def signature(self):
+        return {
+            "inputs": [self.field_ux, self.field_uy],
+            "output": self.field_ux,
+            "order": 2,
+            "type": "elastic_equilibrium",
+            "requires_derived": [
+                f"{self.field_ux}_xx", f"{self.field_ux}_yy",
+                f"{self.field_ux}_xy", f"{self.field_uy}_xx",
+                f"{self.field_uy}_yy", f"{self.field_uy}_xy"
+            ]
+        }
+    
+    def forward(self, fields, coords, derived=None):
+        ux_xx = derived[f"{self.field_ux}_xx"]
+        ux_yy = derived[f"{self.field_ux}_yy"]
+        ux_xy = derived[f"{self.field_ux}_xy"]
+        uy_xx = derived[f"{self.field_uy}_xx"]
+        uy_yy = derived[f"{self.field_uy}_yy"]
+        uy_xy = derived[f"{self.field_uy}_xy"]
+        
+        res_x = (self.lam+2*self.mu)*ux_xx + self.mu*ux_yy + \
+                (self.lam+self.mu)*uy_xy + self.fx
+        res_y = (self.lam+self.mu)*ux_xy + self.mu*uy_xx + \
+                (self.lam+2*self.mu)*uy_yy + self.fy
+        return torch.cat([res_x, res_y], dim=-1)
+
+
+# ---------------------------------------------------------------------------
+# Quantum Mechanics (Schrödinger) Operators
+# ---------------------------------------------------------------------------
+
+class SchrodingerKinetic(Operator):
+    # -ℏ²/2m * ∇²ψ — kinetic energy operator
+    # split into real/imag: operates on both components
+    def __init__(self, hbar=1.0, mass=1.0,
+                 field_real="psi_real", field_imag="psi_imag"):
+        super().__init__(field=field_real)
+        self.coeff = -(hbar**2) / (2*mass)
+        self.field_real = field_real
+        self.field_imag = field_imag
+    
+    def signature(self):
+        return {
+            "inputs": [self.field_real, self.field_imag],
+            "output": self.field_real,
+            "order": 2,
+            "type": "schrodinger_kinetic",
+            "requires_derived": [
+                f"{self.field_real}_xx", f"{self.field_imag}_xx"
+            ]
+        }
+    
+    def forward(self, fields, coords, derived=None):
+        kin_real = self.coeff * derived[f"{self.field_real}_xx"]
+        kin_imag = self.coeff * derived[f"{self.field_imag}_xx"]
+        return torch.cat([kin_real, kin_imag], dim=-1)
+
+class PotentialTerm(Operator):
+    # V(x)*ψ — potential energy
+    def __init__(self, potential_fn, field_real="psi_real",
+                 field_imag="psi_imag"):
+        # potential_fn: callable V(coords) → (N,1)
+        super().__init__(field=field_real)
+        self.V = potential_fn
+        self.field_real = field_real
+        self.field_imag = field_imag
+    
+    def signature(self):
+        return {
+            "inputs": [self.field_real, self.field_imag],
+            "output": self.field_real,
+            "order": 0,
+            "type": "potential_term",
+            "requires_derived": []
+        }
+    
+    def forward(self, fields, coords, derived=None):
+        V = self.V(coords)
+        pot_real = V * fields[self.field_real]
+        pot_imag = V * fields[self.field_imag]
+        return torch.cat([pot_real, pot_imag], dim=-1)
+
+class SchrodingerTimeEvolution(Operator):
+    # iℏ ∂ψ/∂t — left hand side of TDSE
+    # real part: -ℏ * ψ_imag_t
+    # imag part: +ℏ * ψ_real_t
+    def __init__(self, hbar=1.0, field_real="psi_real",
+                 field_imag="psi_imag"):
+        super().__init__(field=field_real)
+        self.hbar = hbar
+        self.field_real = field_real
+        self.field_imag = field_imag
+    
+    def signature(self):
+        return {
+            "inputs": [self.field_real, self.field_imag],
+            "output": self.field_real,
+            "order": 1,
+            "type": "schrodinger_time",
+            "requires_derived": [
+                f"{self.field_real}_t", f"{self.field_imag}_t"
+            ]
+        }
+    
+    def forward(self, fields, coords, derived=None):
+        lhs_real = -self.hbar * derived[f"{self.field_imag}_t"]
+        lhs_imag = self.hbar * derived[f"{self.field_real}_t"]
+        return torch.cat([lhs_real, lhs_imag], dim=-1)

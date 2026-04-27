@@ -4,28 +4,28 @@
 
 ### Core Package Structure
 
-#### `ripple/physics_blocks/__init__.py`
+#### `rippl/physics_blocks/__init__.py`
 - Package initializer exporting all blocks
-- Imports updated to `ripple.physics_blocks...`
+- Imports updated to `rippl.physics_blocks...`
 
-#### `ripple/physics_blocks/README.md`
-- Documentation updated with `ripple` package name
+#### `rippl/physics_blocks/README.md`
+- Documentation updated with `rippl` package name
 
-... (Block files moved to `ripple/physics_blocks/`)
+... (Block files moved to `rippl/physics_blocks/`)
 
 ### Infrastructure
 
 #### `setup.py` (NEW)
 - Replaces `pyproject.toml` for explicit package installation
-- Defines package name `ripple`
+- Defines package name `rippl`
 
-#### `ripple/` (NEW DIRECTORY)
+#### `rippl/` (NEW DIRECTORY)
 - Contains all source code (`physics_blocks`, `training`, `models`, etc.)
 
 ### Tests & Scripts
 
 #### `tests/test_physics_blocks.py`
-- Updated imports to use `ripple`
+- Updated imports to use `rippl`
 
 #### `manual_verify.py` (NEW)
 - Script to verify imports by modifying `sys.path` directly (useful if pip install fails)
@@ -47,6 +47,6 @@ pytest tests/test_physics_blocks.py -v
 ## 🚀 CLI
 
 ```bash
-python -m ripple.cli --config ripple/configs/demo_blocks_playground.yaml
+python -m rippl.cli --config rippl/configs/demo_blocks_playground.yaml
 ```
 

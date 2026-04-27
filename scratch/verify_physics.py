@@ -1,9 +1,9 @@
 import torch
 import math
 import sys
-from ripple.physics.equation import Equation
-from ripple.physics.operators import TimeDerivative, Laplacian
-from ripple.physics_blocks.residual import HybridWaveResidualBlock
+from rippl.physics.equation import Equation
+from rippl.physics.operators import TimeDerivative, Laplacian
+from rippl.physics_blocks.residual import HybridWaveResidualBlock
 
 def analytic_solution(x, t):
     return torch.sin(math.pi * x) * torch.cos(math.pi * t)
