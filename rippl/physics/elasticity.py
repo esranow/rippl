@@ -50,4 +50,4 @@ class LinearElasticitySystem:
         return ["ux", "uy"]
     
     def suggested_model(self) -> MultiFieldMLP:
-        return MultiFieldMLP(fields=["ux", "uy"], hidden=64, layers=5)
+        return MultiFieldMLP(in_dim=self.dims, fields=["ux", "uy"], hidden=64, layers=5)

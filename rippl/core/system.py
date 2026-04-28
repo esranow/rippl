@@ -110,11 +110,8 @@ class System:
                 # Check output (if it refers to a field name directly)
                 # Usually output is 'field' or 'op(field)'. 
                 # If output is exactly a field name, it must be in self.fields.
-                if sig["output"] in self.fields or "(" not in sig["output"]:
-                    if sig["output"] not in self.fields:
-                        # This might be too strict if output is just a label.
-                        # But the prompt says "input/output field names exist in self.fields".
-                        pass
+                if "(" not in sig["output"] and sig["output"] not in self.fields:
+                    raise RipplValidationError(f"Operator {op.__class__.__name__} output field '{sig['output']}' not in System.fields.")
 
         # 2. Domain bounds match spatial_dims
         # Bounds should match spatial_dims exactly (time is not a spatial dimension in Domain).

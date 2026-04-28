@@ -1,3 +1,6 @@
+> **Note:** Python package namespace is `ripple`. Distribution name is `rippl`. 
+> Import as `import ripple`.
+
 # Rippl
 ### The FastAPI of SciML | Differentiable Physics Engine for PyTorch
 
@@ -24,7 +27,7 @@ Most SciML libraries suffer from "Academic Bloat": opaque C++ bindings, fragile 
 ## Installation
 
 ```bash
-pip install rippl
+pip install git+https://github.com/esranow/rippleml.git
 ```
 
 *For local development:*

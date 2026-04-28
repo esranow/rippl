@@ -25,6 +25,15 @@ class Operator:
         derived = params.get("derived", {}).copy()
         if "spatial_dims" in params:
             derived["spatial_dims"] = params["spatial_dims"]
+        
+        # Ensure all required derivatives are present in derived dict
+        sig = self.signature()
+        reqs = sig.get("requires_derived", [])
+        missing = [r for r in reqs if r not in derived]
+        if missing:
+            from rippl.physics.derivatives import compute_all_derivatives
+            derived.update(compute_all_derivatives(fields, coords, missing))
+            
         return self.forward(fields, coords, derived)
 
     def signature(self) -> Dict[str, Any]:
@@ -42,91 +51,71 @@ class Operator:
 # ---------------------------------------------------------------------------
 
 class Laplacian(Operator):
+    def __init__(self, field="u", spatial_dims=None):
+        # spatial_dims: explicit int — number of spatial dims
+        # if None, inferred from Domain at equation build time
+        # NEVER default to total input dims
+        super().__init__(field=field)
+        self.spatial_dims = spatial_dims
+
     def signature(self) -> Dict[str, Any]:
+        # We need second order derivatives for each spatial dimension
+        # If spatial_dims is None, we default to 1 for signature purposes
+        # but Equation will handle the actual precomputation.
+        n = self.spatial_dims or 1 
+        reqs = []
+        for d in range(n):
+            suffix = 'xy'[d] if d < 2 else str(d)
+            reqs.append(f"{self.field}_{suffix}{suffix}")
         return {
             "inputs": [self.field],
             "output": f"laplacian({self.field})",
             "order": 2, 
             "type": "spatial",
-            "requires_derived": [] # Standard Laplacian can still use autograd internally if not precomputed
+            "requires_derived": reqs
         }
 
     def forward(self, fields, coords, derived=None):
+        # only sum over dims 0..spatial_dims-1
+        # NEVER include time dim (last dim)
         u = fields[self.field]
-        inputs = coords
-        # Use spatial_dims from params if provided, else use heuristic
-        # If we have derived dict, we can check for 't' derivative requirements,
-        # but the safest is to trust the caller.
-        spatial_dim = inputs.shape[-1]
-        if derived is not None and any("_t" in k for k in derived.keys()):
-             spatial_dim = inputs.shape[-1] - 1
-        
-        # Override with explicit params if they exist
-        # This is where Equation.compute_residual passes it.
-        # But wait, 'params' is not passed to forward. 
-        # Ah, compute() passes it in 'derived' or we should change forward signature?
-        # Actually, Equation.compute_residual passes it in params to residual(), 
-        # which passes it to op.compute().
-        # So I'll check if 'spatial_dims' was passed through some channel.
-        # Currently op.compute() does:
-        # fields = params.get("fields", {self.field: field})
-        # coords = params["inputs"]
-        # derived = params.get("derived", {})
-        # return self.forward(fields, coords, derived)
-        
-        # I'll update forward to accept **kwargs or just use derived as a side channel?
-        # Let's check if we can pass it in derived.
-        if derived and "spatial_dims" in derived:
-            spatial_dim = derived["spatial_dims"]
-
-        grads = torch.autograd.grad(
-            u, inputs,
-            grad_outputs=torch.ones_like(u),
-            create_graph=True,
-            retain_graph=True,
-        )[0]
-
-        laplacian = torch.zeros_like(u)
-        for i in range(spatial_dim):
-            gi = grads[..., i : i + 1]
-            ggi = torch.autograd.grad(
-                gi, inputs,
-                grad_outputs=torch.ones_like(gi),
-                create_graph=True,
-                retain_graph=True,
-                allow_unused=True,
-            )[0]
-            if ggi is not None:
-                laplacian = laplacian + ggi[..., i : i + 1]
-        return laplacian
+        result = torch.zeros_like(u)
+        n_spatial = self.spatial_dims or (coords.shape[-1] - 1)
+        for d in range(n_spatial):  # explicitly exclude time
+            suffix = 'xy'[d] if d < 2 else str(d)
+            key = f"{self.field}_{suffix}{suffix}"
+            result = result + derived[key]
+        return result
 
 
 class Gradient(Operator):
+    def __init__(self, field="u", spatial_dims=None):
+        super().__init__(field=field)
+        self.spatial_dims = spatial_dims
+
     def signature(self) -> Dict[str, Any]:
+        n = self.spatial_dims or 1
+        reqs = []
+        for d in range(n):
+            suffix = 'xy'[d] if d < 2 else str(d)
+            reqs.append(f"{self.field}_{suffix}")
         return {
             "inputs": [self.field],
             "output": f"grad({self.field})",
             "order": 1, 
             "type": "spatial",
-            "requires_derived": []
+            "requires_derived": reqs
         }
 
     def forward(self, fields, coords, derived=None):
         u = fields[self.field]
-        inputs = coords
-        spatial_dim = inputs.shape[-1]
-        if derived and "spatial_dims" in derived:
-            spatial_dim = derived["spatial_dims"]
-        elif derived is not None and any("_t" in k for k in derived.keys()):
-            spatial_dim = inputs.shape[-1] - 1
-            
-        grads = torch.autograd.grad(
-            u, inputs,
-            grad_outputs=torch.ones_like(u),
-            create_graph=True,
-            retain_graph=True,
-        )[0]
-        return grads[..., :spatial_dim]
+        n_spatial = self.spatial_dims or (coords.shape[-1] - 1)
+        grads = []
+        for d in range(n_spatial):
+            suffix = 'xy'[d] if d < 2 else str(d)
+            key = f"{self.field}_{suffix}"
+            grads.append(derived[key])
+        return torch.cat(grads, dim=-1)
 
 
 class Divergence(Operator):
@@ -198,12 +187,13 @@ class Diffusion(Operator):
         self.laplacian = Laplacian(field=field)
 
     def signature(self) -> Dict[str, Any]:
+        sig = self.laplacian.signature()
         return {
             "inputs": [self.field],
             "output": f"diffusion({self.field})",
             "order": 2, 
             "type": "spatial",
-            "requires_derived": []
+            "requires_derived": sig["requires_derived"]
         }
 
     def forward(self, fields, coords, derived=None):
@@ -217,12 +207,13 @@ class Advection(Operator):
         self.gradient = Gradient(field=field)
 
     def signature(self) -> Dict[str, Any]:
+        sig = self.gradient.signature()
         return {
             "inputs": [self.field],
             "output": f"advection({self.field})",
             "order": 1, 
             "type": "spatial",
-            "requires_derived": []
+            "requires_derived": sig["requires_derived"]
         }
 
     def forward(self, fields, coords, derived=None):

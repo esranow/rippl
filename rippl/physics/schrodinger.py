@@ -75,5 +75,5 @@ class SchrodingerSystem:
     
     def suggested_model(self) -> MultiFieldMLP:
         return MultiFieldMLP(
-            fields=["psi_real", "psi_imag"], hidden=64, layers=5
+            in_dim=self.dims + 1, fields=["psi_real", "psi_imag"], hidden=64, layers=5
         )

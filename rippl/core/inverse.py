@@ -91,9 +91,9 @@ class InverseProblem:
             current_params = {p.name: p.get() for p in self.parameters}
             
             if isinstance(self.system.equation, EquationSystem):
-                loss_pde = self.system.equation.compute_loss(fields_colloc, colloc_coords, params=current_params)
+                loss_pde = self.system.equation.compute_loss(fields_colloc, colloc_coords)
             else:
-                pde_res = self.system.equation.compute_residual(fields_colloc["u"], colloc_coords, params=current_params)
+                pde_res = self.system.equation.compute_residual(fields_colloc["u"], colloc_coords)
                 loss_pde = (pde_res**2).mean()
             
             # Bounds penalties

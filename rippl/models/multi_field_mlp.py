@@ -10,7 +10,7 @@ class MultiFieldMLP(nn.Module):
     hidden: Number of neurons per hidden layer in the trunk.
     layers: Number of hidden layers in the trunk.
     """
-    def __init__(self, fields: List[str] = ["u"], hidden: int = 50, layers: int = 4, in_dim: int = 2):
+    def __init__(self, in_dim: int, fields: List[str], hidden: int = 50, layers: int = 4):
         super().__init__()
         self.fields = fields
         

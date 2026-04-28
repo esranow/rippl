@@ -71,4 +71,4 @@ class NavierStokesSystem:
         return ["u", "v", "p"]
     
     def suggested_model(self) -> MultiFieldMLP:
-        return MultiFieldMLP(fields=["u", "v", "p"], hidden=64, layers=6)
+        return MultiFieldMLP(in_dim=self.dims + 1, fields=["u", "v", "p"], hidden=64, layers=6)

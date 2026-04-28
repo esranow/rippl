@@ -54,7 +54,7 @@ def test_adaptive_sampler_update_returns_tensor():
     
     class DummyModel(torch.nn.Module):
         def forward(self, x): return x**2
-    eq = Equation(terms=[(1.0, Laplacian())])
+    eq = Equation(terms=[(1.0, Laplacian(spatial_dims=1))])
     
     new_pts = sampler.update(DummyModel(), eq, epoch=500) # update_freq default is 500
     assert new_pts.shape == (50, 1)
@@ -70,7 +70,7 @@ def test_adaptive_sampler_concentrates_on_high_residual():
     class HighResModel(torch.nn.Module):
         def forward(self, x): return torch.exp(5.0 * x)
     
-    eq = Equation(terms=[(1.0, Laplacian())])
+    eq = Equation(terms=[(1.0, Laplacian(spatial_dims=1))])
     
     pts = sampler.update(HighResModel(), eq, epoch=1)
     # Check if more points are in [0.5, 1.0] than [0.0, 0.5]
@@ -109,7 +109,7 @@ def test_inverse_problem_optimizer_includes_parameters():
     p = InverseParameter("alpha", 0.1)
     # Need basic setup for InverseProblem
     domain = Domain(spatial_dims=1, bounds=((0, 1),), resolution=(10,))
-    sys = System(equation=Equation(terms=[(1.0, Laplacian())]), domain=domain)
+    sys = System(equation=Equation(terms=[(1.0, Laplacian(spatial_dims=1))]), domain=domain)
     
     obs_coords = torch.tensor([[0.5]])
     obs_vals = {"u": torch.tensor([[0.5]])}
