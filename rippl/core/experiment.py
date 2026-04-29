@@ -57,125 +57,156 @@ class Experiment(CausalTrainingMixin):
             from rippl.training.adaptive_sampler import AdaptiveCollocationSampler
             self.sampler = AdaptiveCollocationSampler(self.system.domain)
 
-    def train(self, coords: torch.Tensor, epochs: int = 1) -> Dict[str, Any]: # coords: (N, D)
-        """Run the training loop with residual, constraint, and conservation losses."""
-        # Feature: Set reference for conservation laws
-        if self.conservation_laws:
-            for law in self.conservation_laws:
-                law.set_reference(self.model, coords)
+    def _compute_grad_norm(self, loss_component: torch.Tensor, model: torch.nn.Module) -> float:
+        """Isolated helper to compute gradient norm for NTK update."""
+        model.zero_grad()
+        loss_component.backward(retain_graph=True)
+        grad_norm_sq = sum(p.grad.pow(2).sum() for p in model.parameters() if p.grad is not None)
+        model.zero_grad() # Clear immediately
+        return torch.sqrt(grad_norm_sq).item()
 
-        total_loss = torch.tensor(0.0)
-        loss_pde = torch.tensor(0.0)
+    def train(self, coords: torch.Tensor, epochs: int = 1, ntk_freq: int = 500, patience: int = 200) -> Dict[str, Any]:
+        """Run the training loop with Lazy NTK weighting and dynamic L-BFGS handoff."""
+        best_loss = float('inf')
+        patience_counter = 0
+        ntk_weights = {name: 1.0 for name in (["pde"] + [f"const_{i}" for i in range(len(self.system.constraints))])}
         
-        for epoch in range(epochs):
-            self.opt.zero_grad()
-            
-            # Feature 2: Adaptive Collocation
-            if self.adaptive_collocation:
-                self.sampler.update(self.model, self.system.equation, epoch)
-                coords = self.sampler.current_points()
-            
-            # 1. Forward pass & Wrapping
-            coords.requires_grad_(True)
-            u_out = self.model(coords)
+        # Ensure coords require grad for physics derivatives
+        coords = coords.clone().detach().requires_grad_(True)
+
+        def _get_losses(current_coords):
+            """Core loss computation closure."""
+            # 1. Forward pass
+            u_out = self.model(current_coords)
             fields = u_out if isinstance(u_out, dict) else {"u": u_out}
             
             # 2. Physics Loss
             spatial_dims = self.system.domain.spatial_dims
             if isinstance(self.system.equation, EquationSystem):
-                residuals = self.system.equation.compute_residuals(fields, coords, spatial_dims=spatial_dims)
+                residuals = self.system.equation.compute_residuals(fields, current_coords, spatial_dims=spatial_dims)
                 if self.causal_training:
-                    # Apply causal weighting to each residual
                     weighted_losses = []
                     for res in residuals:
-                        if self.causal_mode == "binned":
-                            w = self.compute_causal_weights_binned(coords, res, n_bins=self.causal_bins, epsilon=self.causal_epsilon)
-                        else:
-                            w = self.compute_causal_weights_continuous(coords, res, epsilon=self.causal_epsilon)
+                        w = self.compute_causal_weights_binned(current_coords, res, n_bins=self.causal_bins, epsilon=self.causal_epsilon) if self.causal_mode == "binned" else \
+                            self.compute_causal_weights_continuous(current_coords, res, epsilon=self.causal_epsilon)
                         weighted_losses.append(torch.mean(w * res**2))
-                    
-                    # Sum weighted losses with equation weights
-                    loss_pde = torch.tensor(0.0, device=coords.device)
-                    for l, weight in zip(weighted_losses, self.system.equation.weights):
-                        loss_pde = loss_pde + weight * l
+                    loss_pde = sum(w_eq * l for w_eq, l in zip(self.system.equation.weights, weighted_losses))
                 else:
-                    loss_pde = self.system.equation.compute_loss(fields, coords, spatial_dims=spatial_dims)
+                    loss_pde = self.system.equation.compute_loss(fields, current_coords, spatial_dims=spatial_dims)
             else:
-                pde_res = self.system.equation.compute_residual(fields["u"], coords, spatial_dims=spatial_dims)
+                pde_res = self.system.equation.compute_residual(fields["u"], current_coords, spatial_dims=spatial_dims)
                 if self.causal_training:
-                    if self.causal_mode == "binned":
-                        w = self.compute_causal_weights_binned(coords, pde_res, n_bins=self.causal_bins, epsilon=self.causal_epsilon)
-                    else:
-                        w = self.compute_causal_weights_continuous(coords, pde_res, epsilon=self.causal_epsilon)
+                    w = self.compute_causal_weights_binned(current_coords, pde_res, n_bins=self.causal_bins, epsilon=self.causal_epsilon) if self.causal_mode == "binned" else \
+                        self.compute_causal_weights_continuous(current_coords, pde_res, epsilon=self.causal_epsilon)
                     loss_pde = (w * pde_res**2).mean()
                 else:
                     loss_pde = (pde_res**2).mean()
             
-            # Feature: Auto-tune causal epsilon
-            if self.causal_training and epoch % 100 == 0:
-                main_res = pde_res if not isinstance(self.system.equation, EquationSystem) else residuals[0]
-                self.causal_epsilon = self.optimal_epsilon(main_res)
-            
             # 3. Constraint Loss
             loss_dict = {"pde": loss_pde}
             import torch.nn.functional as F
-            from rippl.core.system import Constraint, NeumannConstraint
+            from rippl.core.system import NeumannConstraint
             for i, c in enumerate(self.system.constraints):
                 if isinstance(c, NeumannConstraint):
-                    c_coords = c.coords.to(coords.device).requires_grad_(True)
+                    c_coords = c.coords.to(current_coords.device).requires_grad_(True)
                     u_pred_all = self.model(c_coords)
                     fields_c = u_pred_all if isinstance(u_pred_all, dict) else {"u": u_pred_all}
                     u_pred = fields_c[c.field]
                     grad = torch.autograd.grad(u_pred.sum(), c_coords, create_graph=True, retain_graph=True)[0]
                     val_pred = grad[..., c.normal_direction : c.normal_direction + 1]
                 else:
-                    if self.use_hard_constraints and c.type == "dirichlet":
-                        continue
-                    c_coords = c.coords.to(coords.device)
+                    if self.use_hard_constraints and c.type == "dirichlet": continue
+                    c_coords = c.coords.to(current_coords.device)
                     u_pred_all = self.model(c_coords)
                     fields_c = u_pred_all if isinstance(u_pred_all, dict) else {"u": u_pred_all}
                     val_pred = fields_c[c.field]
                 
                 u_target = c.value(c_coords) if callable(c.value) else c.value
-                if isinstance(u_target, (float, int)):
-                    u_target = torch.full_like(val_pred, float(u_target))
-                else:
-                    u_target = u_target.to(coords.device)
-                
+                if isinstance(u_target, (float, int)): u_target = torch.full_like(val_pred, float(u_target))
+                else: u_target = u_target.to(current_coords.device)
                 loss_dict[f"const_{i}"] = F.mse_loss(val_pred, u_target)
             
-            # 4. Adaptive Loss Weighting
-            if self.adaptive_loss:
-                temp_total = sum(loss_dict.values())
-                self.balancer.step(self.model, loss_dict, temp_total, epoch)
-                total_loss = self.balancer.apply(loss_dict)
-            else:
-                total_loss = loss_pde + 100.0 * sum(v for k, v in loss_dict.items() if k != "pde")
-
-            # 5. Conservation Loss
-            loss_cons = torch.tensor(0.0, device=coords.device)
+            # 4. Conservation Loss
+            loss_cons = torch.tensor(0.0, device=current_coords.device)
             for law in self.conservation_laws:
-                loss_cons = loss_cons + law.penalty(self.model, coords)
+                loss_cons = loss_cons + law.penalty(self.model, current_coords)
             
-            total_loss = total_loss + 10.0 * loss_cons
+            return loss_dict, loss_cons
+
+        # Feature: Set reference for conservation laws
+        if self.conservation_laws:
+            for law in self.conservation_laws:
+                law.set_reference(self.model, coords)
+
+        # Main Adam Training Loop
+        for epoch in range(epochs):
+            self.opt.zero_grad()
             
-            if epoch % 500 == 0:
-                if self.causal_training: print(f"Epoch {epoch}: Causal Epsilon = {self.causal_epsilon:.4f}")
-                if self.adaptive_loss: print(f"Epoch {epoch}: Balancer weights = {self.balancer.log()}")
+            if self.adaptive_collocation:
+                self.sampler.update(self.model, self.system.equation, epoch)
+                coords = self.sampler.current_points().requires_grad_(True)
             
-            if torch.isnan(total_loss):
-                raise RuntimeError("Training encountered NaN loss")
-                
+            loss_dict, loss_cons = _get_losses(coords)
+            
+            # Lazy NTK Update
+            if self.adaptive_loss and epoch % ntk_freq == 0:
+                # Update weights: lambda_i = max(||grad_pde||) / ||grad_const_i||
+                g_pde = self._compute_grad_norm(loss_dict["pde"], self.model)
+                new_weights = {"pde": 1.0}
+                weight_log = ["pde: 1.0"]
+                for i in range(len(self.system.constraints)):
+                    name = f"const_{i}"
+                    g_i = self._compute_grad_norm(loss_dict[name], self.model)
+                    w_i = g_pde / (g_i + 1e-8)
+                    new_weights[name] = w_i
+                    weight_log.append(f"{name}: {w_i:.2f}")
+                ntk_weights.update(new_weights)
+                print(f"[NTK] Epoch {epoch}: Weight shift -> {', '.join(weight_log)}")
+
+            # Apply Weights
+            total_loss = sum(ntk_weights[k] * v for k, v in loss_dict.items()) + 10.0 * loss_cons
+            
+            if torch.isnan(total_loss): raise RuntimeError("Training encountered NaN loss")
+            
+            # Adam step
             total_loss.backward()
             self.opt.step()
+
+            # Plateau Detection (Handoff trigger)
+            current_loss_val = total_loss.item()
+            if current_loss_val < best_loss - 1e-5:
+                best_loss = current_loss_val
+                patience_counter = 0
+            else:
+                patience_counter += 1
             
-        # 5. Validation Framework
+            if patience_counter >= patience:
+                print(f"[HANDOFF] Epoch {epoch}: Adam plateaued at loss {current_loss_val:.4e}. Triggering L-BFGS exploitation...")
+                break
+
+        # L-BFGS Exploitation Phase
+        print("[L-BFGS] Starting exploitation phase...")
+        lbfgs_opt = torch.optim.LBFGS(self.model.parameters(), lr=1.0, max_iter=20, line_search_fn="strong_wolfe")
+        
+        def closure():
+            lbfgs_opt.zero_grad()
+            l_dict, l_cons = _get_losses(coords)
+            # Apply FROZEN ntk_weights
+            total = sum(ntk_weights[k] * v for k, v in l_dict.items()) + 10.0 * l_cons
+            if total.requires_grad:
+                total.backward()
+            return total
+
+        # Run L-BFGS for a fixed number of steps
+        for step in range(100):
+            lbfgs_opt.step(closure)
+
         if self.validate_after_train:
             from rippl.diagnostics.physics_validator import PhysicsValidator
             validator = PhysicsValidator(self.system, self.model, coords)
             validator.full_report()
 
         return {
-            "loss": total_loss.item(),
-            "meta": {"epochs": epochs, "pde_loss": loss_pde.item()}
+            "loss": best_loss,
+            "meta": {"epochs_adam": epoch + 1, "final_ntk_weights": ntk_weights}
         }
