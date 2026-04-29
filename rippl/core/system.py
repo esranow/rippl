@@ -66,13 +66,15 @@ class System:
         domain: Domain,
         constraints: Optional[List[Union[Constraint, NeumannConstraint]]] = None,
         fields: Optional[List[str]] = None,
-        particular_solution: Optional[Callable] = None
+        particular_solution: Optional[Callable] = None,
+        scales: Optional['ReferenceScales'] = None
     ):
         self.equation = equation
         self.domain = domain
         self.constraints: List[Union[Constraint, NeumannConstraint]] = constraints or []
         self.fields = fields or ["u"]
         self.particular_solution = particular_solution
+        self.scales = scales
 
     def validate_fields(self, field_dict: Dict[str, torch.Tensor]) -> None:
         """Verify that the provided field tensors match the system specification."""
@@ -112,6 +114,17 @@ class System:
                 # If output is exactly a field name, it must be in self.fields.
                 if "(" not in sig["output"] and sig["output"] not in self.fields:
                     raise RipplValidationError(f"Operator {op.__class__.__name__} output field '{sig['output']}' not in System.fields.")
+
+                # Feature 1: Large coefficient warning
+                if self.scales is None:
+                    import warnings
+                    from rippl.core.exceptions import PhysicsModelWarning
+                    if abs(coeff) > 1e3 or (abs(coeff) < 1e-3 and abs(coeff) > 0):
+                        warnings.warn(
+                            f"Large coefficient ({coeff}) detected. Consider setting System(scales=ReferenceScales(...)) "
+                            "to avoid gradient starvation.",
+                            PhysicsModelWarning
+                        )
 
         # 2. Domain bounds match spatial_dims
         # Bounds should match spatial_dims exactly (time is not a spatial dimension in Domain).

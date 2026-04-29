@@ -546,3 +546,59 @@ class SchrodingerTimeEvolution(Operator):
         lhs_real = -self.hbar * derived[f"{self.field_imag}_t"]
         lhs_imag = self.hbar * derived[f"{self.field_real}_t"]
         return torch.cat([lhs_real, lhs_imag], dim=-1)
+
+
+class ArtificialViscosity(Operator):
+    """
+    Dynamic diffusion injected where |∇u| exceeds threshold.
+    Prevents NaN in near-shock regions without custom CUDA kernels.
+    Uses open-source PyTorch ops only.
+    
+    u_visc = epsilon(x) * Δu
+    epsilon(x) = epsilon_max * r(x) / (max(r) + 1e-8)
+    where r(x) = local residual magnitude
+    
+    Only activates where |∇u| > gradient_threshold.
+    """
+    def __init__(self, field: str = "u",
+                 epsilon_max: float = 0.1,
+                 gradient_threshold: float = 10.0,
+                 spatial_dims: int = None):
+        super().__init__(field=field)
+        self.epsilon_max = epsilon_max
+        self.gradient_threshold = gradient_threshold
+        self.spatial_dims = spatial_dims
+
+    def signature(self) -> dict:
+        return {
+            "inputs": [self.field],
+            "output": self.field,
+            "order": 2,
+            "type": "artificial_viscosity",
+            "requires_derived": []  # computes its own derivatives internally
+        }
+
+    def forward(self, fields: dict, coords: torch.Tensor,
+                derived: dict = None) -> torch.Tensor:
+        u = fields[self.field]
+        n_spatial = self.spatial_dims or (coords.shape[-1] - 1)
+
+        # Compute |∇u| — gradient magnitude
+        if not coords.requires_grad:
+            coords = coords.requires_grad_(True)
+        du = torch.autograd.grad(u.sum(), coords, create_graph=True)[0]
+        grad_mag = du[:, :n_spatial].pow(2).sum(dim=-1, keepdim=True).sqrt()
+
+        # Laplacian for diffusion term
+        lap = torch.zeros_like(u)
+        for d in range(n_spatial):
+            u_d = du[:, d:d+1]
+            u_dd = torch.autograd.grad(u_d.sum(), coords, create_graph=True)[0][:, d:d+1]
+            lap = lap + u_dd
+
+        # Dynamic coefficient — only where gradient exceeds threshold
+        mask = (grad_mag > self.gradient_threshold).float()
+        r = (grad_mag * mask)
+        epsilon = self.epsilon_max * r / (r.max() + 1e-8)
+
+        return epsilon * lap
