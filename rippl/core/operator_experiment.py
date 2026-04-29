@@ -25,6 +25,11 @@ class OperatorExperiment:
         self.dataset = dataset
         self.system = system # Optional for PI-Operator Learning
     
+    @classmethod
+    def from_flywheel(cls, flywheel):
+        """Constructs OperatorExperiment from a trained flywheel's dataset."""
+        return cls(flywheel.fno_model, flywheel.dataset_train, system=flywheel.system)
+    
     def train(self, epochs=1000, lr=1e-3, physics_weight=0.0):
         optimizer = torch.optim.Adam(self.model.parameters(), lr=lr)
         loader = DataLoader(self.dataset, batch_size=32, shuffle=True)
