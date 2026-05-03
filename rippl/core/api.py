@@ -1,5 +1,31 @@
 import torch
+import os
+import warnings
 from typing import Any, Dict, Union
+
+_API_KEY = os.getenv("RIPPL_API_KEY", None)
+
+def authenticate(api_key: str):
+    """
+    Authenticates the Rippl environment with lwly.io.
+    Required for multi-node orchestration, managed cloud compute, 
+    and enterprise aerospace geometries.
+    """
+    global _API_KEY
+    if not api_key.startswith("sk_"):
+        raise ValueError("Invalid Rippl API key format. Get one at https://lwly.io")
+    
+    _API_KEY = api_key
+    # Note: v0.3.0 will implement the active lwly.io telemetry ping here.
+    print(f"Rippl Authenticated. Enterprise features unlocked.")
+
+def _require_auth(feature_name: str):
+    """Internal check for locked features."""
+    if _API_KEY is None:
+        raise PermissionError(
+            f"Rippl API Key required for: '{feature_name}'. "
+            "Authenticate via rp.authenticate('sk_...') or set RIPPL_API_KEY env var."
+        )
 
 def compile(model: torch.nn.Module, backend: str = "inductor", 
             mode: str = "max-autotune") -> torch.nn.Module:
@@ -15,6 +41,8 @@ def run(domain: Any, equation: Any, model: torch.nn.Module,
         strategy: str = "auto", devices: Union[int, str] = "auto",
         precision: str = "bf16-mixed", epochs: int = 10000,
         **kwargs) -> Dict[str, Any]:
+    if kwargs.get("compute") == "rippl-cloud":
+        _require_auth("Managed Cloud Compute")
     try:
         import pytorch_lightning as pl
         from rippl.training.lightning_engine import LightningEngine
