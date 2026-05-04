@@ -27,6 +27,22 @@ def _require_auth(feature_name: str):
             "Authenticate via rp.authenticate('sk_...') or set RIPPL_API_KEY env var."
         )
 
+def _extract_bc_value(system, location):
+    if not system.constraints:
+        return 0.0
+    bounds = system.domain.bounds[0]
+    target_x = bounds[0] if location == "left" else bounds[1]
+    for c in system.constraints:
+        if c.type == "dirichlet":
+            if torch.isclose(c.coords[:, 0], torch.tensor(target_x, dtype=torch.float32)).any():
+                if isinstance(c.value, torch.Tensor):
+                    return c.value.view(-1)[0].item()
+                elif callable(c.value):
+                    return c.value(c.coords).view(-1)[0].item()
+                else:
+                    return float(c.value)
+    return 0.0
+
 def compile(model: torch.nn.Module, backend: str = "inductor", 
             mode: str = "max-autotune") -> torch.nn.Module:
     try:
@@ -37,12 +53,35 @@ def compile(model: torch.nn.Module, backend: str = "inductor",
         warnings.warn(f"torch.compile backend='{backend}' unavailable. Running eager mode.")
         return model
 
-def run(domain: Any, equation: Any, model: torch.nn.Module,
+def run(domain_or_system: Any, equation_or_model: Any = None, model: torch.nn.Module = None,
         strategy: str = "auto", devices: Union[int, str] = "auto",
         precision: str = "bf16-mixed", epochs: int = 10000,
         **kwargs) -> Dict[str, Any]:
+    
+    from rippl.core.system import System
+    if isinstance(domain_or_system, System):
+        system = domain_or_system
+        domain = system.domain
+        equation = system.equation
+        model = equation_or_model
+    else:
+        system = kwargs.get("system", None)
+        domain = domain_or_system
+        equation = equation_or_model
+
     if kwargs.get("compute") == "rippl-cloud":
         _require_auth("Managed Cloud Compute")
+        
+    hard_bcs = kwargs.get("hard_bcs", False)
+    if hard_bcs and system is not None:
+        from rippl.physics.distance import AnsatzFactory
+        if domain.spatial_dims == 1:
+            a = _extract_bc_value(system, location="left")
+            b = _extract_bc_value(system, location="right")
+            model = AnsatzFactory.dirichlet_1d(model, a=a, b=b)
+        elif domain.spatial_dims == 2:
+            model = AnsatzFactory.dirichlet_2d_box(model)
+            
     try:
         import pytorch_lightning as pl
         from rippl.training.lightning_engine import LightningEngine
@@ -63,11 +102,20 @@ def _run_lightning(domain, equation, model, strategy, devices,
                              lr=kwargs.get("lr", 1e-3),
                              constraint_weight=kwargs.get("constraint_weight", 100.0),
                              lbfgs_steps=kwargs.get("lbfgs_steps", 500),
-                             causal=kwargs.get("causal", False))
+                             causal=kwargs.get("causal", False),
+                             causal_mode=kwargs.get("causal_mode", "continuous"),
+                             causal_epsilon=kwargs.get("causal_epsilon", None),
+                             causal_bins=kwargs.get("causal_bins", 20),
+                             adaptive_loss=kwargs.get("adaptive_loss", False),
+                             adaptive_loss_mode=kwargs.get("adaptive_loss_mode", "gradient_norm"),
+                             adaptive_loss_freq=kwargs.get("adaptive_loss_freq", 100),
+                             hard_bcs=kwargs.get("hard_bcs", False))
     trainer = pl.Trainer(max_epochs=epochs, strategy=strategy, devices=devices,
                          precision=precision, enable_checkpointing=False, logger=False,
                          callbacks=kwargs.get("callbacks", []))
-    loader = domain.generate_loader(batch_size=kwargs.get("batch_size", 2048))
+    
+    collocation = kwargs.get("collocation", "sobol")
+    loader = domain.generate_loader(batch_size=kwargs.get("batch_size", 2048), method=collocation)
     trainer.fit(engine, train_dataloaders=loader)
     
     return {"model_state": model.state_dict(), 
@@ -83,7 +131,8 @@ def _run_native(domain, equation, model, epochs, kwargs):
 
     device = next(model.parameters()).device
     scaler = AutoScaler.from_domain_equation(domain, equation)
-    loader = domain.generate_loader(batch_size=kwargs.get("batch_size", 2048))
+    collocation = kwargs.get("collocation", "sobol")
+    loader = domain.generate_loader(batch_size=kwargs.get("batch_size", 2048), method=collocation)
     
     def loss_fn():
         batch = next(iter(loader))[0].to(device)
@@ -91,7 +140,8 @@ def _run_native(domain, equation, model, epochs, kwargs):
         scaled = scaler.scale_inputs(c)
         u = model(scaled)
         u_phys = scaler.scale_outputs(u)
-        pde_loss = equation.compute_loss({"u": u_phys} if not isinstance(u_phys, dict) else u_phys, c)
+        res = equation.compute_residual(u_phys, c)
+        pde_loss = res.pow(2).mean() if res.shape[-1] == 1 else res.pow(2).sum(dim=-1).mean()
         return pde_loss, pde_loss
 
     def constraint_loss_fn():

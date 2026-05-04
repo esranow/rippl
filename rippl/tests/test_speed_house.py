@@ -19,6 +19,9 @@ class DummyEquation:
     characteristic_velocity = 2.0
     def compute_loss(self, preds, coords):
         return torch.tensor(0.5, requires_grad=True)
+    def compute_residual(self, u, coords, spatial_dims=None):
+        # Return something connected to u's graph so backward() works
+        return u * 0.0 + 0.1
 
 def test_compile_returns_module():
     model = MLP(2, 1)

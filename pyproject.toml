@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "rippl"
-version = "0.1.3"
+version = "0.3.0"
 description = "High-performance physics compiler and PINN engine."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -20,7 +20,7 @@ distributed = ["pytorch-lightning>=2.0"]
 rippl = "rippl.cli:main"
 
 [tool.setuptools]
-packages = ["rippl", "rippl.core", "rippl.physics", "rippl.solvers", "rippl.training", "rippl.nn", "rippl.config", "rippl.operators", "rippl.io", "rippl.datasets", "rippl.diagnostics"]
+packages = ["rippl", "rippl.core", "rippl.physics", "rippl.solvers", "rippl.training", "rippl.nn", "rippl.config", "rippl.operators", "rippl.io", "rippl.datasets", "rippl.diagnostics", "rippl.migrate", "rippl.sampling"]
 
 [tool.pytest.ini_options]
 testpaths = ["rippl/tests"]

@@ -32,18 +32,37 @@ class Domain:
         coords = torch.stack(grid, dim=-1)
         return coords, spacings
 
-    def generate_loader(self, batch_size: int = 2048):
+    def generate_loader(self, batch_size: int = 2048, method: str = "sobol"):
         from torch.utils.data import DataLoader, TensorDataset
         import torch
-        # Sobol sampling over domain bounds including time if present
-        sobol = torch.quasirandom.SobolEngine(len(self.bounds), scramble=True)
-        n_points = max(batch_size * 10, 50000)
-        pts = sobol.draw(n_points)
-        # Scale to actual bounds
-        for i, (lo, hi) in enumerate(self.bounds):
-            pts[:, i] = pts[:, i] * (hi - lo) + lo
-        dataset = TensorDataset(pts)
-        return DataLoader(dataset, batch_size=batch_size, shuffle=True)
+        if method == "chebyshev":
+            from rippl.sampling.spectral import ChebyshevSampler
+            # Guessing n_per_dim to match approx 50000 points or batch_size
+            n_per_dim = max(16, int((batch_size * 10) ** (1/len(self.bounds))))
+            sampler = ChebyshevSampler(self, n_per_dim=n_per_dim)
+            return sampler.to_loader(batch_size=batch_size)
+        elif method == "legendre":
+            from rippl.sampling.spectral import LegendreSampler
+            n_per_dim = max(16, int((batch_size * 10) ** (1/len(self.bounds))))
+            sampler = LegendreSampler(self, n_per_dim=n_per_dim)
+            return sampler.to_loader(batch_size=batch_size)
+        elif method == "random":
+            n_points = max(batch_size * 10, 50000)
+            pts = torch.rand(n_points, len(self.bounds))
+            for i, (lo, hi) in enumerate(self.bounds):
+                pts[:, i] = pts[:, i] * (hi - lo) + lo
+            dataset = TensorDataset(pts)
+            return DataLoader(dataset, batch_size=batch_size, shuffle=True)
+        else:
+            # Sobol sampling over domain bounds including time if present
+            sobol = torch.quasirandom.SobolEngine(len(self.bounds), scramble=True)
+            n_points = max(batch_size * 10, 50000)
+            pts = sobol.draw(n_points)
+            # Scale to actual bounds
+            for i, (lo, hi) in enumerate(self.bounds):
+                pts[:, i] = pts[:, i] * (hi - lo) + lo
+            dataset = TensorDataset(pts)
+            return DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
 
 @dataclass
