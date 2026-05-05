@@ -60,7 +60,7 @@ class Engine:
             from rippl.core.api import RipplProRequired
             raise RipplProRequired(
                 "Multi-GPU training requires rippl-pro. "
-                "Get access at lwly.io"
+                "Multi-GPU training requires rippl-pro."
             )
 
 

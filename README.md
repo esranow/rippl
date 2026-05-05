@@ -5,7 +5,7 @@
 [![PyPI](https://img.shields.io/pypi/v/rippl)](https://pypi.org/project/rippl)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue)](LICENSE)
 
-→ **[Full Documentation](docs/)** · [lwly.io](https://lwly.io) · [Benchmarks](rippl/benchmarks/README.md)
+→ **[Full Documentation](docs/)** · [Benchmarks](rippl/benchmarks/README.md)
 
 ---
 ## What it is
@@ -33,9 +33,8 @@ pip install rippl
 ```
 
 ---
-## Multi-GPU & Enterprise
-Multi-GPU DDP training, `auto.rippl` tokenized orchestrators, and 3D STL mesh ingestion are handled via the `rippl-pro` proprietary extension. 
-API keys and cloud compute available at **[lwly.io](https://lwly.io)**
+## Multi-GPU Scaling
+Multi-GPU DDP training and advanced 3D mesh ingestion are supported via the `rippl-pro` plugin architecture. 
 
 ---
 ## License

@@ -1,5 +1,13 @@
-import torch
+import torch, math
 import torch.nn as nn
+
+class PeriodicAnsatz(torch.nn.Module):
+    def __init__(self, m, p=1.0, d=0):
+        super().__init__(); self.m, self.p, self.d = m, p, d
+    def forward(self, x):
+        a = 2*math.pi*x[:,self.d:self.d+1]/self.p
+        return self.m(torch.cat([x[:,:self.d], torch.sin(a), torch.cos(a), x[:,self.d+1:]], dim=1))
+
 
 class DistanceFunction:
     def __call__(self, coords: torch.Tensor) -> torch.Tensor: # coords: (N, D)
@@ -127,6 +135,9 @@ class AnsatzFactory:
         """Zero flux at x=0 and x=1."""
         D = BoxDistance([(0,1)])
         return NeumannAnsatzWrapper(model, D, neumann_value=0.0)
+    @staticmethod
+    def periodic_1d(m, p=1.0, d=0) -> PeriodicAnsatz:
+        return PeriodicAnsatz(m, p, d)
 
 class TimeVaryingDistance(DistanceFunction):
     """
