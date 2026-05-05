@@ -1,0 +1,2092 @@
+{
+  "rippl": {
+    "api.py": {
+      "lines": 146,
+      "classes": {},
+      "ops": []
+    },
+    "cli.py": {
+      "lines": 120,
+      "classes": {},
+      "ops": []
+    },
+    "visualize.py": {
+      "lines": 49,
+      "classes": {},
+      "ops": []
+    },
+    "__init__.py": {
+      "lines": 8,
+      "classes": {},
+      "ops": []
+    },
+    "benchmarks\\allen_cahn_1d.py": {
+      "lines": 35,
+      "classes": {},
+      "ops": []
+    },
+    "benchmarks\\burgers_1d.py": {
+      "lines": 27,
+      "classes": {},
+      "ops": []
+    },
+    "benchmarks\\csg_laplace_annulus.py": {
+      "lines": 58,
+      "classes": {},
+      "ops": []
+    },
+    "benchmarks\\digital_twin_heat.py": {
+      "lines": 50,
+      "classes": {},
+      "ops": []
+    },
+    "benchmarks\\eikonal_2d.py": {
+      "lines": 34,
+      "classes": {},
+      "ops": []
+    },
+    "benchmarks\\elastic_bar_1d.py": {
+      "lines": 25,
+      "classes": {},
+      "ops": []
+    },
+    "benchmarks\\fno_flywheel_heat.py": {
+      "lines": 42,
+      "classes": {},
+      "ops": []
+    },
+    "benchmarks\\fno_heat_operator.py": {
+      "lines": 51,
+      "classes": {},
+      "ops": []
+    },
+    "benchmarks\\fractional_diffusion.py": {
+      "lines": 38,
+      "classes": {},
+      "ops": []
+    },
+    "benchmarks\\heat1d_verify.py": {
+      "lines": 143,
+      "classes": {
+        "SineLayer": [
+          "__init__",
+          "forward"
+        ],
+        "SIREN": [
+          "__init__",
+          "forward"
+        ]
+      },
+      "ops": [
+        "autograd.grad",
+        "LBFGS",
+        "requires_grad"
+      ]
+    },
+    "benchmarks\\multifidelity_heat.py": {
+      "lines": 37,
+      "classes": {},
+      "ops": []
+    },
+    "benchmarks\\ns_2d_cavity.py": {
+      "lines": 28,
+      "classes": {},
+      "ops": []
+    },
+    "benchmarks\\schrodinger_particle_box.py": {
+      "lines": 20,
+      "classes": {},
+      "ops": []
+    },
+    "benchmarks\\stefan_1d.py": {
+      "lines": 98,
+      "classes": {},
+      "ops": []
+    },
+    "benchmarks\\stokes1d_couette.py": {
+      "lines": 84,
+      "classes": {},
+      "ops": []
+    },
+    "benchmarks\\turing_patterns.py": {
+      "lines": 43,
+      "classes": {},
+      "ops": []
+    },
+    "benchmarks\\uq_heat.py": {
+      "lines": 93,
+      "classes": {},
+      "ops": []
+    },
+    "benchmarks\\verify_fixes.py": {
+      "lines": 48,
+      "classes": {},
+      "ops": [
+        "requires_grad"
+      ]
+    },
+    "benchmarks\\wave1d_verify.py": {
+      "lines": 221,
+      "classes": {},
+      "ops": [
+        "autograd.grad",
+        "LBFGS",
+        "requires_grad",
+        "ReduceLROnPlateau"
+      ]
+    },
+    "config\\models.py": {
+      "lines": 35,
+      "classes": {
+        "OperatorConfig": [],
+        "EquationConfig": [],
+        "DomainConfig": [],
+        "NetworkConfig": []
+      },
+      "ops": []
+    },
+    "core\\api.py": {
+      "lines": 100,
+      "classes": {
+        "RipplProRequired": []
+      },
+      "ops": [
+        "autograd.grad",
+        "LBFGS",
+        "requires_grad",
+        "ReduceLROnPlateau"
+      ]
+    },
+    "core\\artifact.py": {
+      "lines": 49,
+      "classes": {
+        "ArtifactCompiler": [
+          "__init__",
+          "save"
+        ]
+      },
+      "ops": []
+    },
+    "core\\config.py": {
+      "lines": 87,
+      "classes": {
+        "ConfigParser": [
+          "load",
+          "save"
+        ]
+      },
+      "ops": []
+    },
+    "core\\engine.py": {
+      "lines": 103,
+      "classes": {
+        "Engine": [
+          "__init__",
+          "compile",
+          "save",
+          "validate",
+          "fit"
+        ]
+      },
+      "ops": [
+        "requires_grad"
+      ]
+    },
+    "core\\equation.py": {
+      "lines": 39,
+      "classes": {
+        "Equation": [
+          "__init__",
+          "residual",
+          "compute_residual",
+          "compute_pointwise_residual"
+        ]
+      },
+      "ops": [
+        "requires_grad"
+      ]
+    },
+    "core\\equation_system.py": {
+      "lines": 55,
+      "classes": {
+        "EquationSystem": [
+          "__init__",
+          "compute_residuals",
+          "compute_loss"
+        ]
+      },
+      "ops": [
+        "requires_grad"
+      ]
+    },
+    "core\\exceptions.py": {
+      "lines": 11,
+      "classes": {
+        "RipplError": [],
+        "RipplValidationError": [],
+        "PhysicsModelWarning": []
+      },
+      "ops": []
+    },
+    "core\\experiment.py": {
+      "lines": 225,
+      "classes": {
+        "Experiment": [
+          "__init__",
+          "_compute_grad_norm",
+          "train"
+        ]
+      },
+      "ops": [
+        "autograd.grad",
+        "LBFGS",
+        "requires_grad"
+      ]
+    },
+    "core\\inverse.py": {
+      "lines": 175,
+      "classes": {
+        "InverseParameter": [
+          "__init__",
+          "_inverse_transform",
+          "get",
+          "bounds_penalty"
+        ],
+        "DigitalTwin": [
+          "__init__",
+          "from_csv",
+          "train",
+          "report"
+        ],
+        "InverseProblem": [
+          "__init__",
+          "train",
+          "result"
+        ]
+      },
+      "ops": [
+        "requires_grad"
+      ]
+    },
+    "core\\nondim.py": {
+      "lines": 174,
+      "classes": {
+        "ReferenceScales": [
+          "__init__",
+          "normalize_coords",
+          "denormalize_coords",
+          "normalize_field",
+          "denormalize_field",
+          "reynolds_number",
+          "report"
+        ],
+        "NondimSystem": [
+          "__init__",
+          "normalize_constraints",
+          "wrap_model"
+        ],
+        "NondimModelWrapper": [
+          "__init__",
+          "forward"
+        ],
+        "AutoScaler": [
+          "__init__",
+          "from_domain_equation",
+          "get_state",
+          "scale_inputs",
+          "scale_outputs"
+        ]
+      },
+      "ops": []
+    },
+    "core\\operator_experiment.py": {
+      "lines": 69,
+      "classes": {
+        "OperatorDataset": [
+          "__init__",
+          "__len__",
+          "__getitem__",
+          "get_batch"
+        ],
+        "OperatorExperiment": [
+          "__init__",
+          "from_flywheel",
+          "train"
+        ]
+      },
+      "ops": []
+    },
+    "core\\simulation.py": {
+      "lines": 176,
+      "classes": {
+        "Simulation": [
+          "__init__",
+          "run",
+          "visualize"
+        ]
+      },
+      "ops": [
+        "requires_grad"
+      ]
+    },
+    "core\\solver_registry.py": {
+      "lines": 73,
+      "classes": {},
+      "ops": []
+    },
+    "core\\system.py": {
+      "lines": 205,
+      "classes": {
+        "IntConstraint": [],
+        "Domain": [
+          "build_grid",
+          "generate_loader"
+        ],
+        "Constraint": [],
+        "NeumannConstraint": [],
+        "MovingBoundaryConstraint": [
+          "__init__",
+          "update"
+        ],
+        "System": [
+          "__init__",
+          "validate_fields",
+          "validate",
+          "set_seed",
+          "summary",
+          "from_config",
+          "to_config",
+          "_serialize_equation",
+          "_serialize_constraint"
+        ]
+      },
+      "ops": []
+    },
+    "core\\__init__.py": {
+      "lines": 14,
+      "classes": {},
+      "ops": []
+    },
+    "data\\sensor.py": {
+      "lines": 113,
+      "classes": {
+        "SensorDataset": [
+          "__init__",
+          "from_csv",
+          "from_numpy",
+          "_iqr_filter",
+          "data_loss",
+          "split",
+          "__len__"
+        ],
+        "MultiFidelityFusion": [
+          "__init__",
+          "total_data_loss",
+          "fusion_loss"
+        ]
+      },
+      "ops": []
+    },
+    "datasets\\generators.py": {
+      "lines": 59,
+      "classes": {},
+      "ops": []
+    },
+    "datasets\\__init__.py": {
+      "lines": 6,
+      "classes": {},
+      "ops": []
+    },
+    "diagnostics\\energy.py": {
+      "lines": 48,
+      "classes": {},
+      "ops": []
+    },
+    "diagnostics\\metrics.py": {
+      "lines": 31,
+      "classes": {},
+      "ops": []
+    },
+    "diagnostics\\physics_validator.py": {
+      "lines": 97,
+      "classes": {
+        "PhysicsValidator": [
+          "__init__",
+          "residual_stats",
+          "constraint_satisfaction",
+          "conservation_check",
+          "full_report",
+          "export_report"
+        ]
+      },
+      "ops": [
+        "autograd.grad",
+        "requires_grad"
+      ]
+    },
+    "diagnostics\\spectral.py": {
+      "lines": 26,
+      "classes": {},
+      "ops": [
+        "fft"
+      ]
+    },
+    "diagnostics\\__init__.py": {
+      "lines": 8,
+      "classes": {},
+      "ops": []
+    },
+    "examples\\advdiff_1d.py": {
+      "lines": 34,
+      "classes": {},
+      "ops": []
+    },
+    "examples\\advection_1d.py": {
+      "lines": 32,
+      "classes": {},
+      "ops": []
+    },
+    "examples\\burgers.py": {
+      "lines": 43,
+      "classes": {},
+      "ops": []
+    },
+    "examples\\damped_wave.py": {
+      "lines": 33,
+      "classes": {},
+      "ops": []
+    },
+    "examples\\diffusion_1d.py": {
+      "lines": 41,
+      "classes": {},
+      "ops": []
+    },
+    "examples\\pinn_wave_1d.py": {
+      "lines": 25,
+      "classes": {
+        "MLP": [
+          "forward"
+        ]
+      },
+      "ops": [
+        "requires_grad"
+      ]
+    },
+    "examples\\reaction_diffusion.py": {
+      "lines": 46,
+      "classes": {},
+      "ops": []
+    },
+    "examples\\wave_1d.py": {
+      "lines": 43,
+      "classes": {},
+      "ops": []
+    },
+    "export\\exporter.py": {
+      "lines": 78,
+      "classes": {},
+      "ops": []
+    },
+    "geometry\\csg.py": {
+      "lines": 300,
+      "classes": {
+        "Shape": [
+          "contains",
+          "sample_boundary",
+          "bounding_box",
+          "__and__",
+          "__or__",
+          "__sub__",
+          "__invert__"
+        ],
+        "Circle": [
+          "__init__",
+          "contains",
+          "bounding_box",
+          "sample_boundary"
+        ],
+        "Rectangle": [
+          "__init__",
+          "contains",
+          "bounding_box",
+          "sample_boundary"
+        ],
+        "Sphere": [
+          "__init__",
+          "contains",
+          "bounding_box",
+          "sample_boundary"
+        ],
+        "Box": [
+          "__init__",
+          "contains",
+          "bounding_box",
+          "sample_boundary"
+        ],
+        "Annulus": [
+          "__init__",
+          "contains",
+          "bounding_box",
+          "sample_boundary"
+        ],
+        "Ellipse": [
+          "__init__",
+          "contains",
+          "bounding_box",
+          "sample_boundary"
+        ],
+        "Union": [
+          "__init__",
+          "contains",
+          "bounding_box",
+          "sample_boundary"
+        ],
+        "Intersection": [
+          "__init__",
+          "contains",
+          "bounding_box",
+          "sample_boundary"
+        ],
+        "Difference": [
+          "__init__",
+          "contains",
+          "bounding_box",
+          "sample_boundary"
+        ],
+        "Complement": [
+          "__init__",
+          "contains",
+          "bounding_box"
+        ],
+        "CSGSampler": [
+          "__init__",
+          "sample_interior",
+          "sample_boundary",
+          "sample_with_time",
+          "estimate_volume"
+        ],
+        "CSGDomain": [
+          "__init__",
+          "get_sampler",
+          "to_collocation_points"
+        ]
+      },
+      "ops": []
+    },
+    "geometry\\__init__.py": {
+      "lines": 14,
+      "classes": {},
+      "ops": []
+    },
+    "io\\checkpoint.py": {
+      "lines": 73,
+      "classes": {},
+      "ops": []
+    },
+    "io\\export.py": {
+      "lines": 68,
+      "classes": {},
+      "ops": []
+    },
+    "io\\__init__.py": {
+      "lines": 13,
+      "classes": {},
+      "ops": []
+    },
+    "logging\\logger.py": {
+      "lines": 74,
+      "classes": {
+        "RipplLogger": [
+          "__init__",
+          "log_epoch",
+          "_save_to_disk"
+        ]
+      },
+      "ops": []
+    },
+    "migrate\\transpiler.py": {
+      "lines": 83,
+      "classes": {
+        "ExtractedPDE": [],
+        "DeepXDETranspiler": [
+          "__init__",
+          "parse",
+          "visit_FunctionDef",
+          "visit_Call",
+          "_get_call_name",
+          "_eval_const",
+          "to_rippl_script"
+        ],
+        "ModulusTranspiler": [
+          "__init__",
+          "parse",
+          "to_rippl_script"
+        ],
+        "SciANNTranspiler": [
+          "__init__",
+          "parse",
+          "to_rippl_script"
+        ],
+        "MigrationError": []
+      },
+      "ops": []
+    },
+    "migrate\\__init__.py": {
+      "lines": 3,
+      "classes": {},
+      "ops": []
+    },
+    "models\\deeponet.py": {
+      "lines": 10,
+      "classes": {
+        "DeepONet": [
+          "__init__",
+          "_net",
+          "forward"
+        ]
+      },
+      "ops": [
+        "einsum"
+      ]
+    },
+    "nn\\adaptivesampler.py": {
+      "lines": 117,
+      "classes": {
+        "AdaptiveSamplingBlock": [
+          "__init__",
+          "_raw_importance",
+          "forward"
+        ]
+      },
+      "ops": [
+        "autograd.grad",
+        "requires_grad"
+      ]
+    },
+    "nn\\boundary_block.py": {
+      "lines": 138,
+      "classes": {
+        "BoundaryConditionBlock": [
+          "__init__",
+          "_boundary_mask",
+          "forward"
+        ]
+      },
+      "ops": []
+    },
+    "nn\\conservation_block.py": {
+      "lines": 129,
+      "classes": {
+        "ConservationConstraintBlock": [
+          "__init__",
+          "_compute_quantity",
+          "forward"
+        ]
+      },
+      "ops": []
+    },
+    "nn\\embedding.py": {
+      "lines": 140,
+      "classes": {
+        "PDEParameterEmbeddingBlock": [
+          "__init__",
+          "forward",
+          "modulate"
+        ]
+      },
+      "ops": []
+    },
+    "nn\\energy.py": {
+      "lines": 151,
+      "classes": {
+        "EnergyAwareBlock": [
+          "__init__",
+          "compute_energy",
+          "forward"
+        ]
+      },
+      "ops": [
+        "autograd.grad",
+        "requires_grad"
+      ]
+    },
+    "nn\\fno.py": {
+      "lines": 224,
+      "classes": {
+        "SpectralConv1d": [
+          "__init__",
+          "forward"
+        ],
+        "FNO1d": [
+          "__init__",
+          "forward"
+        ],
+        "SpectralConv2d": [
+          "__init__",
+          "forward"
+        ],
+        "FNO2d": [
+          "__init__",
+          "forward"
+        ],
+        "FNO": [
+          "__init__",
+          "forward"
+        ]
+      },
+      "ops": [
+        "fft",
+        "einsum"
+      ]
+    },
+    "nn\\fourier_mlp.py": {
+      "lines": 66,
+      "classes": {
+        "FourierMLP": [
+          "__init__",
+          "forward"
+        ]
+      },
+      "ops": []
+    },
+    "nn\\gradient.py": {
+      "lines": 116,
+      "classes": {
+        "HybridGradientBlock": [
+          "__init__",
+          "_compute_gradient",
+          "forward"
+        ]
+      },
+      "ops": [
+        "autograd.grad",
+        "requires_grad"
+      ]
+    },
+    "nn\\hamiltonian.py": {
+      "lines": 155,
+      "classes": {
+        "HamiltonianBlock": [
+          "__init__",
+          "hamiltonian",
+          "_grad_H",
+          "step",
+          "forward"
+        ]
+      },
+      "ops": [
+        "autograd.grad",
+        "requires_grad"
+      ]
+    },
+    "nn\\hybrid_stepper.py": {
+      "lines": 135,
+      "classes": {
+        "HybridTimeStepperBlock": [
+          "__init__",
+          "step",
+          "forward"
+        ]
+      },
+      "ops": []
+    },
+    "nn\\laplacian.py": {
+      "lines": 239,
+      "classes": {
+        "_CorrectionMLP": [
+          "__init__",
+          "forward"
+        ],
+        "HybridLaplacianBlock": [
+          "__init__",
+          "_build_fd_kernel",
+          "_laplacian_point",
+          "_laplacian_grid",
+          "_prep_for_nn",
+          "forward"
+        ]
+      },
+      "ops": [
+        "autograd.grad",
+        "requires_grad"
+      ]
+    },
+    "nn\\mlp.py": {
+      "lines": 73,
+      "classes": {
+        "MLP": [
+          "__init__",
+          "_get_activation",
+          "forward"
+        ]
+      },
+      "ops": []
+    },
+    "nn\\multiscale_ff.py": {
+      "lines": 126,
+      "classes": {
+        "MultiScaleFourierFeatureBlock": [
+          "__init__",
+          "gates",
+          "forward"
+        ]
+      },
+      "ops": []
+    },
+    "nn\\multi_field_mlp.py": {
+      "lines": 34,
+      "classes": {
+        "MultiFieldMLP": [
+          "__init__",
+          "forward"
+        ]
+      },
+      "ops": []
+    },
+    "nn\\nn_operator_wrapper.py": {
+      "lines": 192,
+      "classes": {
+        "OperatorWrapperBlock": [
+          "__init__",
+          "points_to_grid",
+          "grid_to_points",
+          "forward"
+        ]
+      },
+      "ops": []
+    },
+    "nn\\oscillator.py": {
+      "lines": 167,
+      "classes": {
+        "_ResidualMLP": [
+          "__init__",
+          "forward"
+        ],
+        "HybridOscillatorBlock": [
+          "__init__",
+          "omega",
+          "_dynamics",
+          "step",
+          "forward"
+        ]
+      },
+      "ops": []
+    },
+    "nn\\residual.py": {
+      "lines": 115,
+      "classes": {
+        "_CorrectionMLP": [
+          "__init__",
+          "forward"
+        ],
+        "HybridWaveResidualBlock": [
+          "__init__",
+          "residual",
+          "loss",
+          "forward"
+        ]
+      },
+      "ops": [
+        "requires_grad"
+      ]
+    },
+    "nn\\siren.py": {
+      "lines": 91,
+      "classes": {
+        "SineLayer": [
+          "__init__",
+          "init_weights",
+          "forward"
+        ],
+        "Siren": [
+          "__init__",
+          "forward"
+        ]
+      },
+      "ops": []
+    },
+    "nn\\spectral.py": {
+      "lines": 184,
+      "classes": {
+        "_AmplitudeMLP": [
+          "__init__",
+          "forward"
+        ],
+        "SpectralHybridBlock": [
+          "__init__",
+          "get_spectrum",
+          "apply_filter",
+          "forward"
+        ]
+      },
+      "ops": [
+        "fft"
+      ]
+    },
+    "nn\\spectral_conv.py": {
+      "lines": 127,
+      "classes": {
+        "SpectralConvBlock": [
+          "__init__",
+          "_spectral_mul",
+          "forward"
+        ]
+      },
+      "ops": [
+        "fft",
+        "einsum"
+      ]
+    },
+    "nn\\spectral_reg.py": {
+      "lines": 99,
+      "classes": {
+        "SpectralRegularizationBlock": [
+          "__init__",
+          "forward"
+        ]
+      },
+      "ops": [
+        "fft"
+      ]
+    },
+    "nn\\__init__.py": {
+      "lines": 30,
+      "classes": {},
+      "ops": []
+    },
+    "operators\\grid_utils.py": {
+      "lines": 47,
+      "classes": {},
+      "ops": []
+    },
+    "operators\\operator_mode.py": {
+      "lines": 69,
+      "classes": {
+        "OperatorTrainer": [
+          "__init__",
+          "training_step"
+        ]
+      },
+      "ops": []
+    },
+    "operators\\__init__.py": {
+      "lines": 7,
+      "classes": {},
+      "ops": []
+    },
+    "physics\\boundary.py": {
+      "lines": 123,
+      "classes": {
+        "BoundaryCondition": [
+          "__init__",
+          "__call__"
+        ],
+        "DirichletBC": [
+          "__init__"
+        ],
+        "NeumannBC": [
+          "__init__"
+        ],
+        "PeriodicBC": [
+          "__init__"
+        ],
+        "ParametricBoundary": [
+          "__init__",
+          "sample"
+        ]
+      },
+      "ops": []
+    },
+    "physics\\conservation.py": {
+      "lines": 54,
+      "classes": {
+        "ConservationLaw": [
+          "__init__",
+          "set_reference",
+          "penalty",
+          "is_satisfied"
+        ],
+        "EnergyConservation": [
+          "__init__"
+        ],
+        "MassConservation": [
+          "__init__"
+        ],
+        "MomentumConservation": [
+          "__init__"
+        ]
+      },
+      "ops": []
+    },
+    "physics\\conservative.py": {
+      "lines": 105,
+      "classes": {
+        "StreamFunctionModel": [
+          "__init__",
+          "forward"
+        ],
+        "VectorPotentialModel": [
+          "__init__",
+          "forward"
+        ]
+      },
+      "ops": [
+        "autograd.grad",
+        "requires_grad"
+      ]
+    },
+    "physics\\delta.py": {
+      "lines": 16,
+      "classes": {
+        "DeltaSrc": [
+          "__init__",
+          "eval"
+        ],
+        "DeltaEq": [
+          "__init__",
+          "compute_loss",
+          "compute_pointwise_residual"
+        ]
+      },
+      "ops": []
+    },
+    "physics\\derivatives.py": {
+      "lines": 104,
+      "classes": {},
+      "ops": [
+        "autograd.grad",
+        "requires_grad"
+      ]
+    },
+    "physics\\distance.py": {
+      "lines": 151,
+      "classes": {
+        "PeriodicAnsatz": [
+          "__init__",
+          "forward"
+        ],
+        "DistanceFunction": [
+          "__call__"
+        ],
+        "BoxDistance": [
+          "__init__",
+          "__call__"
+        ],
+        "HardConstraintWrapper": [
+          "__init__",
+          "forward"
+        ],
+        "NeumannAnsatzWrapper": [
+          "__init__",
+          "forward"
+        ],
+        "MixedBCAnsatz": [
+          "__init__",
+          "forward"
+        ],
+        "AnsatzFactory": [
+          "dirichlet_1d",
+          "dirichlet_2d_box",
+          "neumann_zero_1d",
+          "periodic_1d"
+        ],
+        "TimeVaryingDistance": [
+          "__init__",
+          "__call__"
+        ]
+      },
+      "ops": []
+    },
+    "physics\\elasticity.py": {
+      "lines": 53,
+      "classes": {
+        "LinearElasticitySystem": [
+          "__init__",
+          "build_equation_system",
+          "fields",
+          "suggested_model"
+        ],
+        "ElasticComponent": [
+          "__init__",
+          "signature",
+          "forward",
+          "compute"
+        ]
+      },
+      "ops": []
+    },
+    "physics\\equation.py": {
+      "lines": 7,
+      "classes": {},
+      "ops": []
+    },
+    "physics\\fractional.py": {
+      "lines": 118,
+      "classes": {
+        "FractionalLaplacian": [
+          "__init__",
+          "signature",
+          "forward"
+        ],
+        "CaputoDerivative": [
+          "__init__",
+          "signature",
+          "forward"
+        ],
+        "FractionalSystem": [
+          "subdiffusion",
+          "superdiffusion"
+        ]
+      },
+      "ops": [
+        "fft"
+      ]
+    },
+    "physics\\hamilton_jacobi.py": {
+      "lines": 107,
+      "classes": {
+        "HamiltonianOperator": [
+          "__init__",
+          "signature",
+          "forward"
+        ],
+        "EikonalOperator": [
+          "__init__",
+          "signature",
+          "forward"
+        ],
+        "HJSystem": [
+          "optimal_control",
+          "eikonal"
+        ]
+      },
+      "ops": []
+    },
+    "physics\\navier_stokes.py": {
+      "lines": 88,
+      "classes": {
+        "NavierStokesSystem": [
+          "__init__",
+          "build_equation_system",
+          "fields",
+          "suggested_model"
+        ],
+        "ComponentWrapper": [
+          "__init__",
+          "signature",
+          "forward",
+          "compute"
+        ]
+      },
+      "ops": []
+    },
+    "physics\\operators.py": {
+      "lines": 672,
+      "classes": {
+        "Operator": [
+          "__init__",
+          "forward",
+          "compute",
+          "signature"
+        ],
+        "Laplacian": [
+          "__init__",
+          "signature",
+          "forward"
+        ],
+        "Gradient": [
+          "__init__",
+          "signature",
+          "forward"
+        ],
+        "Divergence": [
+          "signature",
+          "forward"
+        ],
+        "TimeDerivative": [
+          "__init__",
+          "signature",
+          "forward"
+        ],
+        "Diffusion": [
+          "__init__",
+          "signature",
+          "forward"
+        ],
+        "Advection": [
+          "__init__",
+          "signature",
+          "forward"
+        ],
+        "Source": [
+          "__init__",
+          "signature",
+          "forward"
+        ],
+        "Nonlinear": [
+          "__init__",
+          "signature",
+          "forward"
+        ],
+        "BurgersAdvection": [
+          "__init__",
+          "signature",
+          "forward"
+        ],
+        "NonlinearAdvection": [
+          "__init__",
+          "signature",
+          "forward"
+        ],
+        "PressureGradient": [
+          "__init__",
+          "signature",
+          "forward"
+        ],
+        "VelocityDivergence": [
+          "__init__",
+          "signature",
+          "forward"
+        ],
+        "StrainTensor": [
+          "__init__",
+          "signature",
+          "forward"
+        ],
+        "StressTensor": [
+          "__init__",
+          "signature",
+          "forward"
+        ],
+        "ElasticEquilibrium": [
+          "__init__",
+          "signature",
+          "forward"
+        ],
+        "SchrodingerKinetic": [
+          "__init__",
+          "signature",
+          "forward"
+        ],
+        "PotentialTerm": [
+          "__init__",
+          "signature",
+          "forward"
+        ],
+        "SchrodingerTimeEvolution": [
+          "__init__",
+          "signature",
+          "forward"
+        ],
+        "ArtificialViscosity": [
+          "__init__",
+          "signature",
+          "forward"
+        ],
+        "LevelSetOperator": [
+          "__init__",
+          "signature",
+          "forward"
+        ]
+      },
+      "ops": [
+        "autograd.grad",
+        "requires_grad"
+      ]
+    },
+    "physics\\pde.py": {
+      "lines": 24,
+      "classes": {
+        "PDESpec": []
+      },
+      "ops": []
+    },
+    "physics\\phase_field.py": {
+      "lines": 131,
+      "classes": {
+        "CahnHilliardOperator": [
+          "__init__",
+          "signature",
+          "forward",
+          "chemical_potential_residual"
+        ],
+        "AllenCahnOperator": [
+          "__init__",
+          "signature",
+          "forward"
+        ],
+        "PhaseFieldSystem": [
+          "cahn_hilliard",
+          "allen_cahn"
+        ],
+        "ChemicalPotential": [
+          "signature",
+          "forward"
+        ]
+      },
+      "ops": []
+    },
+    "physics\\reaction_diffusion.py": {
+      "lines": 136,
+      "classes": {
+        "ReactionDiffusionOperator": [
+          "__init__",
+          "signature",
+          "forward"
+        ],
+        "TuringSystem": [
+          "__init__",
+          "build_equation_system",
+          "fields"
+        ],
+        "FitzHughNagumoSystem": [
+          "__init__",
+          "build_equation_system",
+          "fields"
+        ],
+        "BrusselatorSystem": [
+          "__init__",
+          "build_equation_system",
+          "fields"
+        ],
+        "W_Eq": [
+          "signature",
+          "forward"
+        ]
+      },
+      "ops": []
+    },
+    "physics\\residuals.py": {
+      "lines": 125,
+      "classes": {},
+      "ops": [
+        "autograd.grad",
+        "requires_grad"
+      ]
+    },
+    "physics\\schrodinger.py": {
+      "lines": 79,
+      "classes": {
+        "SchrodingerSystem": [
+          "__init__",
+          "build_equation_system",
+          "norm_conservation_loss",
+          "fields",
+          "suggested_model"
+        ],
+        "ComponentWrapper": [
+          "__init__",
+          "signature",
+          "forward",
+          "compute"
+        ]
+      },
+      "ops": []
+    },
+    "physics\\shock.py": {
+      "lines": 59,
+      "classes": {
+        "TVDScheme": [
+          "__init__",
+          "apply",
+          "_minmod",
+          "_van_leer",
+          "_superbee"
+        ]
+      },
+      "ops": []
+    },
+    "physics\\__init__.py": {
+      "lines": 16,
+      "classes": {},
+      "ops": []
+    },
+    "sampling\\spectral.py": {
+      "lines": 28,
+      "classes": {
+        "ChebyshevSampler": [
+          "__init__",
+          "sample"
+        ],
+        "LegendreSampler": [
+          "__init__",
+          "sample"
+        ]
+      },
+      "ops": []
+    },
+    "sampling\\__init__.py": {
+      "lines": 1,
+      "classes": {},
+      "ops": []
+    },
+    "solvers\\fd_solver.py": {
+      "lines": 363,
+      "classes": {},
+      "ops": []
+    },
+    "solvers\\spectral_solver.py": {
+      "lines": 65,
+      "classes": {},
+      "ops": [
+        "fft"
+      ]
+    },
+    "solvers\\__init__.py": {
+      "lines": 7,
+      "classes": {},
+      "ops": []
+    },
+    "tests\\test_advdiff.py": {
+      "lines": 62,
+      "classes": {
+        "TinyModel": [
+          "__init__",
+          "forward"
+        ]
+      },
+      "ops": []
+    },
+    "tests\\test_blocks_registry.py": {
+      "lines": 46,
+      "classes": {},
+      "ops": [
+        "requires_grad"
+      ]
+    },
+    "tests\\test_deployment.py": {
+      "lines": 48,
+      "classes": {
+        "TestMLP": [
+          "__init__",
+          "forward"
+        ]
+      },
+      "ops": []
+    },
+    "tests\\test_diagnostics.py": {
+      "lines": 66,
+      "classes": {},
+      "ops": []
+    },
+    "tests\\test_elasticity.py": {
+      "lines": 119,
+      "classes": {
+        "QuadModel": [
+          "__init__",
+          "forward"
+        ]
+      },
+      "ops": [
+        "requires_grad"
+      ]
+    },
+    "tests\\test_equation_sot.py": {
+      "lines": 248,
+      "classes": {
+        "_TinyNet": [
+          "__init__",
+          "forward"
+        ]
+      },
+      "ops": [
+        "requires_grad"
+      ]
+    },
+    "tests\\test_features.py": {
+      "lines": 153,
+      "classes": {
+        "DummyModel": [
+          "forward"
+        ],
+        "HighResModel": [
+          "forward"
+        ],
+        "TinyModel": [
+          "__init__",
+          "forward"
+        ]
+      },
+      "ops": []
+    },
+    "tests\\test_io.py": {
+      "lines": 74,
+      "classes": {},
+      "ops": []
+    },
+    "tests\\test_metal_core.py": {
+      "lines": 134,
+      "classes": {},
+      "ops": [
+        "requires_grad"
+      ]
+    },
+    "tests\\test_migrate.py": {
+      "lines": 46,
+      "classes": {},
+      "ops": []
+    },
+    "tests\\test_models.py": {
+      "lines": 96,
+      "classes": {},
+      "ops": []
+    },
+    "tests\\test_new_physics.py": {
+      "lines": 348,
+      "classes": {},
+      "ops": [
+        "requires_grad"
+      ]
+    },
+    "tests\\test_ns_burgers.py": {
+      "lines": 105,
+      "classes": {},
+      "ops": [
+        "requires_grad"
+      ]
+    },
+    "tests\\test_operator.py": {
+      "lines": 59,
+      "classes": {},
+      "ops": []
+    },
+    "tests\\test_package_import.py": {
+      "lines": 38,
+      "classes": {},
+      "ops": []
+    },
+    "tests\\test_packaging.py": {
+      "lines": 18,
+      "classes": {},
+      "ops": []
+    },
+    "tests\\test_phase3.py": {
+      "lines": 88,
+      "classes": {},
+      "ops": [
+        "requires_grad"
+      ]
+    },
+    "tests\\test_physics.py": {
+      "lines": 104,
+      "classes": {},
+      "ops": [
+        "requires_grad"
+      ]
+    },
+    "tests\\test_physics_blocks.py": {
+      "lines": 473,
+      "classes": {
+        "TestHybridLaplacianBlock": [
+          "test_point_mode_analytic_sine",
+          "test_point_mode_shape",
+          "test_grid_mode_1d_shape",
+          "test_grid_mode_2d_shape"
+        ],
+        "TestHybridWaveResidualBlock": [
+          "test_residual_near_zero_on_analytic_wave",
+          "test_loss_returns_scalar",
+          "test_forward_shape"
+        ],
+        "TestSpectralHybridBlock": [
+          "test_forward_shape",
+          "test_spectral_energy_preserved_no_correction",
+          "test_get_spectrum"
+        ],
+        "TestEnergyAwareBlock": [
+          "test_energy_and_gating_shape",
+          "test_energy_computation"
+        ],
+        "TestHybridOscillatorBlock": [
+          "test_step_shape",
+          "test_forward_dynamics"
+        ],
+        "TestPDEParameterEmbeddingBlock": [
+          "test_embedding_shape",
+          "test_film_modulation_shape"
+        ],
+        "TestHybridGradientBlock": [
+          "test_gradient_shape"
+        ],
+        "TestBoundaryConditionBlock": [
+          "test_dirichlet_enforcement",
+          "test_periodic_shape"
+        ],
+        "TestHamiltonianBlock": [
+          "test_step_shape",
+          "test_hamiltonian_scalar"
+        ],
+        "TestSpectralRegularizationBlock": [
+          "test_penalty_higher_for_noisy"
+        ],
+        "TestMultiScaleFourierFeatureBlock": [
+          "test_output_shape"
+        ],
+        "TestSpectralConvBlock": [
+          "test_forward_shape"
+        ],
+        "TestHybridTimeStepperBlock": [
+          "test_step_shape",
+          "test_rk2_accuracy"
+        ],
+        "TestAdaptiveSamplingBlock": [
+          "test_weights_shape_and_sum"
+        ],
+        "TestConservationConstraintBlock": [
+          "test_mass_conservation"
+        ],
+        "TestOperatorWrapperBlock": [
+          "test_forward_shape"
+        ],
+        "TestCrossBlockPipeline": [
+          "test_laplacian_spectral_energy_pipeline",
+          "test_gradient_residual_pipeline",
+          "test_embedding_modulates_spectral_conv",
+          "test_stepper_with_oscillator"
+        ]
+      },
+      "ops": [
+        "fft",
+        "requires_grad"
+      ]
+    },
+    "tests\\test_prompt1_physics.py": {
+      "lines": 237,
+      "classes": {},
+      "ops": [
+        "autograd.grad",
+        "requires_grad"
+      ]
+    },
+    "tests\\test_prompt2_training.py": {
+      "lines": 220,
+      "classes": {
+        "MockOp": [
+          "signature",
+          "compute",
+          "forward"
+        ],
+        "MockCausal": [],
+        "Wrapper": [
+          "__init__",
+          "forward"
+        ]
+      },
+      "ops": [
+        "requires_grad"
+      ]
+    },
+    "tests\\test_schrodinger_conservation.py": {
+      "lines": 149,
+      "classes": {
+        "NormModel": [
+          "forward"
+        ],
+        "VarModel": [
+          "__init__",
+          "__call__"
+        ]
+      },
+      "ops": [
+        "autograd.grad",
+        "requires_grad"
+      ]
+    },
+    "tests\\test_solvers.py": {
+      "lines": 82,
+      "classes": {},
+      "ops": []
+    },
+    "tests\\test_source_nonlinear.py": {
+      "lines": 53,
+      "classes": {
+        "TinyModel": [
+          "__init__",
+          "forward"
+        ]
+      },
+      "ops": []
+    },
+    "tests\\test_speed_house.py": {
+      "lines": 145,
+      "classes": {
+        "MLP": [
+          "__init__",
+          "forward"
+        ],
+        "DummyEquation": [
+          "compute_loss",
+          "compute_residual"
+        ]
+      },
+      "ops": [
+        "requires_grad"
+      ]
+    },
+    "tests\\test_training_recipe.py": {
+      "lines": 110,
+      "classes": {
+        "MockModel": [
+          "__init__",
+          "forward"
+        ]
+      },
+      "ops": [
+        "LBFGS",
+        "requires_grad"
+      ]
+    },
+    "tests\\test_uq_fno_csg.py": {
+      "lines": 211,
+      "classes": {},
+      "ops": []
+    },
+    "tests\\test_v030.py": {
+      "lines": 46,
+      "classes": {},
+      "ops": [
+        "requires_grad"
+      ]
+    },
+    "tests\\test_v040.py": {
+      "lines": 66,
+      "classes": {},
+      "ops": [
+        "autograd.grad",
+        "requires_grad"
+      ]
+    },
+    "training\\adaptive.py": {
+      "lines": 18,
+      "classes": {
+        "AdaptWt": [
+          "__init__",
+          "forward"
+        ],
+        "TimeCurr": [
+          "__init__",
+          "t_max",
+          "step",
+          "filter"
+        ]
+      },
+      "ops": []
+    },
+    "training\\adaptive_sampler.py": {
+      "lines": 74,
+      "classes": {
+        "AdaptiveCollocationSampler": [
+          "__init__",
+          "initial_sample",
+          "update",
+          "current_points"
+        ]
+      },
+      "ops": [
+        "requires_grad"
+      ]
+    },
+    "training\\callbacks.py": {
+      "lines": 91,
+      "classes": {
+        "Callback": [
+          "on_train_begin",
+          "on_epoch_end",
+          "on_train_end"
+        ],
+        "CheckpointCallback": [
+          "__init__",
+          "on_epoch_end"
+        ],
+        "RARCallback": [
+          "__init__",
+          "on_train_epoch_end"
+        ]
+      },
+      "ops": [
+        "requires_grad"
+      ]
+    },
+    "training\\causal.py": {
+      "lines": 78,
+      "classes": {
+        "CausalTrainingMixin": [
+          "optimal_epsilon",
+          "compute_causal_weights_binned",
+          "compute_causal_weights_continuous"
+        ]
+      },
+      "ops": []
+    },
+    "training\\fno_flywheel.py": {
+      "lines": 152,
+      "classes": {
+        "FNOFlywheel": [
+          "__init__",
+          "generate_dataset",
+          "train",
+          "evaluate",
+          "pipeline"
+        ]
+      },
+      "ops": []
+    },
+    "training\\lbfgs_config.py": {
+      "lines": 20,
+      "classes": {
+        "LBFGSConfig": [
+          "for_pde"
+        ]
+      },
+      "ops": [
+        "LBFGS"
+      ]
+    },
+    "training\\lightning.py": {
+      "lines": 51,
+      "classes": {
+        "RipplLightningEngine": [
+          "__init__",
+          "forward",
+          "training_step",
+          "configure_optimizers"
+        ]
+      },
+      "ops": [
+        "LBFGS",
+        "requires_grad"
+      ]
+    },
+    "training\\lightning_engine.py": {
+      "lines": 133,
+      "classes": {
+        "LightningEngine": [
+          "__init__"
+        ]
+      },
+      "ops": [
+        "LBFGS",
+        "requires_grad"
+      ]
+    },
+    "training\\ntk_weighting.py": {
+      "lines": 86,
+      "classes": {
+        "GradientNormWeighting": [
+          "__init__",
+          "update",
+          "_get_grad_norm",
+          "apply"
+        ],
+        "NTKDiagonalWeighting": [
+          "__init__",
+          "_compute_jacobian_norm",
+          "update",
+          "apply"
+        ],
+        "AdaptiveLossBalancer": [
+          "__init__",
+          "update",
+          "apply"
+        ]
+      },
+      "ops": [
+        "autograd.grad"
+      ]
+    },
+    "training\\pareto.py": {
+      "lines": 16,
+      "classes": {
+        "ParetoBal": [
+          "__init__",
+          "compute"
+        ]
+      },
+      "ops": [
+        "autograd.grad"
+      ]
+    },
+    "training\\pinn_recipe.py": {
+      "lines": 211,
+      "classes": {
+        "PINNTrainingRecipe": [
+          "__init__",
+          "run",
+          "_phase_a",
+          "_phase_b",
+          "_phase_c",
+          "_update_ntk_weights",
+          "_get_grad_norm",
+          "_dynamic_handoff_check"
+        ]
+      },
+      "ops": [
+        "LBFGS",
+        "ReduceLROnPlateau"
+      ]
+    },
+    "training\\uq.py": {
+      "lines": 213,
+      "classes": {
+        "MCDropoutWrapper": [
+          "__init__",
+          "_inject_dropout",
+          "forward",
+          "predict_with_uncertainty"
+        ],
+        "DeepEnsemble": [
+          "__init__",
+          "predict_with_uncertainty",
+          "__len__"
+        ],
+        "UncertaintyQuantifier": [
+          "__init__",
+          "predict",
+          "confidence_interval",
+          "epistemic_uncertainty",
+          "high_uncertainty_regions"
+        ],
+        "ProbabilisticExperiment": [
+          "__init__",
+          "train",
+          "predict_with_uncertainty",
+          "uncertainty_report"
+        ],
+        "LinearDropout": [
+          "__init__",
+          "forward"
+        ]
+      },
+      "ops": []
+    },
+    "training\\vpinn.py": {
+      "lines": 21,
+      "classes": {
+        "VPINN": [
+          "__init__",
+          "loss"
+        ]
+      },
+      "ops": [
+        "requires_grad"
+      ]
+    },
+    "training\\__init__.py": {
+      "lines": 8,
+      "classes": {},
+      "ops": [
+        "LBFGS"
+      ]
+    }
+  },
+  "rippl-pro": {
+    "rippl_pro\\__init__.py": {
+      "lines": 7,
+      "classes": {},
+      "ops": []
+    },
+    "rippl_pro\\architectures\\deeponet.py": {
+      "lines": 8,
+      "classes": {
+        "DeepONet": [
+          "__init__",
+          "forward"
+        ]
+      },
+      "ops": [
+        "einsum"
+      ]
+    },
+    "rippl_pro\\architectures\\fno.py": {
+      "lines": 47,
+      "classes": {
+        "FNO1d": [
+          "__init__",
+          "forward"
+        ],
+        "FNO2d": [
+          "__init__",
+          "forward"
+        ],
+        "FNO3d": [
+          "__init__",
+          "forward"
+        ]
+      },
+      "ops": [
+        "fft",
+        "einsum"
+      ]
+    },
+    "rippl_pro\\scale\\ddp.py": {
+      "lines": 12,
+      "classes": {},
+      "ops": []
+    },
+    "rippl_pro\\shock\\weno.py": {
+      "lines": 6,
+      "classes": {
+        "WENO3": [
+          "flux",
+          "_smooth"
+        ],
+        "WENO5": [
+          "flux"
+        ]
+      },
+      "ops": []
+    },
+    "rippl_pro\\training\\api_original.py": {
+      "lines": 164,
+      "classes": {},
+      "ops": [
+        "requires_grad"
+      ]
+    },
+    "rippl_pro\\training\\engine.py": {
+      "lines": 111,
+      "classes": {
+        "Engine": [
+          "__init__",
+          "compile",
+          "save",
+          "validate",
+          "fit"
+        ]
+      },
+      "ops": [
+        "requires_grad"
+      ]
+    },
+    "rippl_pro\\training\\lightning_engine.py": {
+      "lines": 143,
+      "classes": {
+        "LightningEngine": [
+          "__init__"
+        ]
+      },
+      "ops": [
+        "LBFGS",
+        "requires_grad"
+      ]
+    },
+    "rippl_pro\\turbulence\\rans.py": {
+      "lines": 5,
+      "classes": {
+        "RANSKEpsilon": [
+          "__init__",
+          "build_equation_system",
+          "fields"
+        ]
+      },
+      "ops": []
+    },
+    "rippl_pro\\_license\\ledger.py": {
+      "lines": 8,
+      "classes": {
+        "LicenseError": []
+      },
+      "ops": []
+    }
+  }
+}

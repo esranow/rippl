@@ -2,4 +2,4 @@
 import rippl as rp; import rippl.nn as rnn
 model = rp.compile(rnn.MLP(in_dim=2, out_dim=1))
 result = rp.run(domain, equation, model, csl=True, ntk=True, hard_bcs=True)
-## rp.run(..., devices=4) raises RipplProRequired → lwly.io
+## rp.run(..., devices=4) raises RipplProRequired
