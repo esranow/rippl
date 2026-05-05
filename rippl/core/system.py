@@ -35,7 +35,7 @@ class Domain:
         coords = torch.stack(grid, dim=-1)
         return coords, spacings
 
-    def generate_loader(self, bs=2048, meth="sobol"):
+    def generate_loader(self, batch_size=2048, meth="sobol"):
         from torch.utils.data import DataLoader, TensorDataset
         if meth == "chebyshev":
             from rippl.sampling.spectral import ChebyshevSampler
@@ -44,12 +44,12 @@ class Domain:
             from rippl.sampling.spectral import LegendreSampler
             pts, _ = LegendreSampler(self, n_per_dim=32).sample()
         elif meth == "random":
-            pts = torch.rand(bs*10, len(self.bounds))
+            pts = torch.rand(batch_size*10, len(self.bounds))
             for i,(l,h) in enumerate(self.bounds): pts[:,i] = pts[:,i]*(h-l)+l
         else:
-            pts = torch.quasirandom.SobolEngine(len(self.bounds), scramble=True).draw(max(bs*10, 50000))
+            pts = torch.quasirandom.SobolEngine(len(self.bounds), scramble=True).draw(max(batch_size*10, 50000))
             for i,(l,h) in enumerate(self.bounds): pts[:,i] = pts[:,i]*(h-l)+l
-        return DataLoader(TensorDataset(pts), batch_size=bs, shuffle=True)
+        return DataLoader(TensorDataset(pts), batch_size=batch_size, shuffle=True)
 
 @dataclass
 class Constraint:
@@ -120,7 +120,7 @@ class System:
                     import warnings
                     from rippl.core.exceptions import PhysicsModelWarning
                     if abs(coeff) > 1e3 or (abs(coeff) < 1e-3 and abs(coeff) > 0):
-                        warnings.warn(f"Large coeff ({coeff}) detected.", PhysicsModelWarning)
+                        warnings.warn(f"Large coefficient ({coeff}) detected.", PhysicsModelWarning)
         if len(self.domain.bounds) != self.domain.spatial_dims:
             raise RipplValidationError(f"Domain bounds mismatch spatial_dims.")
         for c in self.constraints:

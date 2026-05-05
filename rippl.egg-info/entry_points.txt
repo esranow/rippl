@@ -1,0 +1,2 @@
+[console_scripts]
+rippl = rippl.cli:main

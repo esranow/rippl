@@ -1,29 +1,45 @@
+# Jupyter
+*.ipynb
+.ipynb_checkpoints/
+
+# Python cache
 __pycache__/
 *.py[cod]
-*$py.class
-*.egg-info/
-dist/
-build/
-.pytest_cache/
-.coverage
-htmlcov/
-.venv/
-venv/
-ENV/
-env/
-.env
-.ipynb_checkpoints/
-*.bak
-*.swp
-*.swo
+*.pyd
 
-# Pro features
-rippl_pro/
+# Lightning
+lightning_logs/
+
+# rippl artifacts
 *.rpl
 *.rpx.key
+~/.rippl/
 
-# Artifacts
-*.ipynb_checkpoints/
+# Scratch
 scratch/
 temp_*/
-checkpoints/
+notebooks/
+
+# Logs
+*.log
+benchmark_run.log
+
+# Jupyter & Cache
+*.ipynb
+.ipynb_checkpoints/
+__pycache__/
+*.py[cod]
+*.pyd
+
+# Lightning & Logs
+lightning_logs/
+*.log
+
+# rippl artifacts & scratch
+*.rpl
+*.rpx
+.key
+~/.rippl/
+scratch/
+temp_*/
+notebooks/

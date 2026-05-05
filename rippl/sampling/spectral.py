@@ -21,5 +21,8 @@ class LegendreSampler:
             x, w = np.polynomial.legendre.leggauss(self.n)
             pts.append(torch.tensor(0.5*(x+1)*(h-l)+l, dtype=torch.float32))
             wts.append(torch.tensor(w*0.5*(h-l), dtype=torch.float32))
-        grid = torch.meshgrid(*pts, indexing='ij')
-        return torch.stack(grid, dim=-1).reshape(-1, len(self.dom.bounds)), wts
+        p_grid = torch.meshgrid(*pts, indexing='ij')
+        w_grid = torch.meshgrid(*wts, indexing='ij')
+        p = torch.stack(p_grid, dim=-1).reshape(-1, len(self.dom.bounds))
+        w = torch.stack(w_grid, dim=-1).prod(dim=-1).reshape(-1)
+        return p, w

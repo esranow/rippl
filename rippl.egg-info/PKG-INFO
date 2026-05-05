@@ -1,0 +1,52 @@
+Metadata-Version: 2.4
+Name: rippl
+Version: 0.3.0
+Summary: High-performance physics compiler and PINN engine.
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: torch>=2.0
+Requires-Dist: pydantic
+Dynamic: license-file
+
+# rippl
+**The physics compiler for neural networks.**
+
+[![Tests](https://github.com/esranow/rippl/actions/workflows/ci.yml/badge.svg)](https://github.com/esranow/rippl/actions)
+[![PyPI](https://img.shields.io/pypi/v/rippl)](https://pypi.org/project/rippl)
+[![License](https://img.shields.io/badge/license-Apache%202.0-blue)](LICENSE)
+
+→ **[Full Documentation](docs/)** · [Benchmarks](rippl/benchmarks/README.md)
+
+---
+## What it is
+rippl is a physics compiler. You write the PDE. rippl solves it.
+It sits between you and PyTorch — handling residual computation, 
+boundary enforcement, causal training, and adaptive loss balancing 
+so you don't have to.
+
+---
+## 7 Lines
+```python
+import rippl
+import rippl.nn as nn
+
+model  = nn.MLP(in_dim=2, out_dim=1)
+engine = rippl.compile(model)
+result = rippl.run(domain, equation, engine,
+                causal=True, adaptive_loss=True, hard_bcs=True)
+```
+
+---
+## Install
+```bash
+pip install rippl
+```
+
+---
+## Multi-GPU Scaling
+Multi-GPU DDP training and advanced 3D mesh ingestion are supported via the `rippl-pro` plugin architecture. 
+
+---
+## License
+Apache 2.0 — see [LICENSE](LICENSE)
